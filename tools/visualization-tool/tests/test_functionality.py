@@ -304,7 +304,11 @@ class CompleteGuideTests(unittest.TestCase):
         self.assertIn("<img src='data:image/svg+xml;base64,", mmd)
         self.assertIn("width='27' height='27'", mmd)
         self.assertIn("width='32' height='32'", mmd)
-        self.assertIn("<span style='font-size:12px'>", mmd)
+        # The R1+ layout keeps role/cardinality inside the measured HTML div;
+        # test preserved semantics rather than an obsolete, exact CSS fragment.
+        self.assertIn('ddta:Contract', mmd)
+        self.assertIn('INPUT', mmd)
+        self.assertIn('0..1', mmd)
         self.assertNotIn('\\"', mmd)
 
     def test_20_manual_steps_equal_single_pipeline(self):

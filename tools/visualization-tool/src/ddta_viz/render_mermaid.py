@@ -37,7 +37,16 @@ def render(ir, rules:Catalog):
     if ir.get('schema')!='ddta-graph-ir-v2':
         raise RuleError('IR non riconosciuto: atteso ddta-graph-ir-v2')
     ll=rules.global_label['mermaid']['labelTemplate']
-    lines=['%%{init: {"htmlLabels":true,"theme":"base"}}%%','flowchart TB']
+    # DDTA-SINGLE-RENDERER-R10: one deterministic final rendering path.
+    # The approved R9 experiment used ELK and did not override title margins.
+    # Icons, labels and styles still come from the compiled graphical guides.
+    mermaid_spec = rules.global_label.get('mermaid', {})
+    diagram_init = {
+        'htmlLabels': mermaid_spec.get('htmlLabels', True),
+        'theme': 'base',
+        'layout': 'elk',
+    }
+    lines = ['%%{init: ' + json.dumps(diagram_init, ensure_ascii=False, separators=(',', ':')) + '}%%', 'flowchart TB']
     to_style=[]; edge_styles=[]; link_idx=0
     occurrence_ids=defaultdict(list)
     ancestor_ids={}
@@ -125,7 +134,16 @@ def render(ir, rules:Catalog):
                         name=html.escape(node['name'],quote=True),
                         rdfType=html.escape(node['rdfType'],quote=True))
         extra=[]
-        if node.get('role'):extra.append(node['role'])
+        role=node.get('role')
+        if role:
+            # DDTA-COMPACT-HEADER-R1: preserve INPUT/OUTPUT on the *rdfType*
+            # line, inside the measured HTML header, never outside its div.
+            # Visual role labels are not RDF types or new RDF individuals.
+            trailer='</span></div>'
+            if label.endswith(trailer):
+                label=label[:-len(trailer)]+' · '+html.escape(str(role))+trailer
+            else:
+                extra.append(role)
         attrs=node.get('attributes',{})
         label_settings=rec.get('label',{})
         if label_settings.get('showDeclaredCardinality'):
@@ -135,7 +153,15 @@ def render(ir, rules:Catalog):
             elif mi is not None:extra.append(f'min: {mi}')
             elif ma is not None:extra.append(f'max: {ma}')
         if extra:
-            label += '<br/>' + ' '.join("<span style='font-size:12px'>"+html.escape(str(x))+'</span>' for x in extra)
+            # Keep declared cardinality/supplementary text inside the
+            # existing HTML box, so Mermaid can measure the label height.
+            additional=''.join(
+                "<span style='display:block;text-align:center;font-size:12px'>"
+                +html.escape(str(x))+'</span>' for x in extra)
+            if label.endswith('</div>'):
+                label=label[:-6]+additional+'</div>'
+            else:
+                label+='<br/>'+additional
         icon=rec.get('icon',{})
         if icon.get('source'):
             data=svg_embed(node,icon['source'],rec)
@@ -312,7 +338,7 @@ def render(ir, rules:Catalog):
             caption_rule=rule.get('layout',{}).get('resourceGroupCaption',{})
             caption_bottom=bool(node.get('iconKey') and caption_rule.get('position')=='bottom')
             lines.append(f'{prefix}subgraph {gid}[{q(' ' if caption_bottom else node.get('label', ''))}]')
-            lines.append(f'{prefix}    direction {group_direction(node)}')
+            lines.append(f"{prefix}    direction {visual_plan[gid]['direction']}")
             for child in node.get('children',[]): node_emit(child,depth+1)
             if caption_bottom:
                 icon_spec=rule.get('icons',{}).get(node['iconKey'],{})
@@ -330,13 +356,14 @@ def render(ir, rules:Catalog):
                         invisible_link(anchor,caption_id,depth+1)
             emit_bucket(node,depth+1)
             lines.append(f'{prefix}end')
-            add_style(gid,group_style(node))
+            add_style(gid,visual_plan[gid]['style'])
             return
         nid=node['occurrence']
         occurrence_ids[node['iri']].append(nid)
         rec=rules.classes[node['rdfType']]
-        style=style_for(node)
-        label=label_for(node,rec,style)
+        planned=visual_plan[nid]
+        style=planned['style']
+        label=planned['label']
         if node.get('children'):
             container=rec.get('container',{})
             if container.get('renderer') != 'mermaid-subgraph':
@@ -344,7 +371,7 @@ def render(ir, rules:Catalog):
             lines.append(f'{prefix}subgraph {nid}[{q(label)}]')
             # Direction from grouped-relations-style if present, otherwise from class container.
             gr=rules.group_rule(node['rdfType'])
-            direction=(gr.get('layout',{}).get('direction') if gr else None) or rec.get('layout',{}).get('childrenDirection','TB')
+            direction=planned['direction']
             lines.append(f'{prefix}    direction {direction}')
             for child in node['children']:node_emit(child,depth+1)
             emit_bucket(node,depth+1)
@@ -357,6 +384,41 @@ def render(ir, rules:Catalog):
     def node_emit(item,depth=1):
         if item['kind']=='group':node(item,depth)
         else:node(item,depth)
+
+    # DDTA-SINGLE-RENDERER-R10 -- GLOBAL GRAPHICAL PLANNING PASS.
+    # project_view.project() has already constructed the entire graph: no
+    # Mermaid is emitted until all individuals/groups have a resolved visual
+    # label, real guide icon, declared style and child direction.
+    visual_plan = {}
+    def prepare_visual_plan(items):
+        for item in items:
+            kind = item['kind']
+            if kind == 'individual':
+                rid = item['occurrence']
+                record = rules.classes[item['rdfType']]
+                styling = style_for(item)
+                graphical_group = rules.group_rule(item['rdfType'])
+                direction = ((graphical_group.get('layout', {}).get('direction') if graphical_group else None)
+                             or record.get('layout', {}).get('childrenDirection', 'TB'))
+                visual_plan[rid] = {
+                    'label': label_for(item, record, styling),
+                    'style': styling,
+                    'direction': direction,
+                }
+            elif kind == 'group':
+                rid = id_for(['group', item.get('key'), item.get('groupRuleClass'),
+                              item.get('group'),
+                              [c.get('occurrence', c.get('key')) for c in item.get('children', [])]])
+                visual_plan[rid] = {'style': group_style(item), 'direction': group_direction(item)}
+            # realization-layout has a declared graphical structure handled
+            # by the existing renderer; its Function/Process children are
+            # planned here before any Mermaid output is emitted.
+            prepare_visual_plan(item.get('children', []))
+
+    prepare_visual_plan(ir.get('roots', []))
+    if any(item.get('kind') == 'individual' and item['occurrence'] not in visual_plan
+           for item in ir.get('roots', [])):
+        raise RuleError('Piano grafico incompleto')
 
     for root in ir.get('roots',[]):node_emit(root)
     # Cross-container edges are intentionally global.  Edges that share a
@@ -371,8 +433,20 @@ def render(ir, rules:Catalog):
             add_edge(src,dst,edge['rule'])
     if buckets:
         raise RuleError(f'Archiviazione archi non completata: {len(buckets)} contenitori')
-    for node_id,rule in to_style:
-        lines.append(f'    style {node_id} {rule}')
+    # DDTA-SINGLE-RENDERER-R10 -- classDef/class, generated only from
+    # actual YAML-derived style values. Group by exact CSS declarations;
+    # no fixed CORE class names/colors or additional graphical relations.
+    styles_by_css = defaultdict(set)
+    last_style = {}
+    for node_id, declaration in to_style:
+        # Preserve the original renderer's last-declaration-wins semantics.
+        last_style[node_id] = declaration
+    for node_id, declaration in last_style.items():
+        styles_by_css[declaration].add(node_id)
+    for declaration, ids in sorted(styles_by_css.items()):
+        cls = 'DDTA_C_' + hashlib.sha256(declaration.encode('utf-8')).hexdigest()[:12]
+        lines.append(f'    classDef {cls} {declaration}')
+        lines.append(f'    class {",".join(sorted(ids))} {cls}')
     for idx,st in edge_styles:
         lines.append(f'    linkStyle {idx} {st}')
     return '\n'.join(lines)+'\n'
