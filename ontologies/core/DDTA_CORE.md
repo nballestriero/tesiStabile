@@ -28,7 +28,7 @@ flowchart TB
 
 Un `System` offre funzioni tramite `providesFunction`, con ruoli specificabili attraverso `hasPrimaryFunction` e `hasSupportFunction`. L'associazione `hasOperationalEnvironment` indica il contesto operativo previsto. `Environment` rende disponibili `Resource` mediante `makesAvailable`, senza implicare che un sistema le utilizzi, che esse siano operative o che appartengano automaticamente a un suo confine.
 
-Una `Function` identifica una capacità o responsabilità, indipendentemente dal processo che la realizza. Può essere decomposta mediante `hasSubFunction`; le precedenze obbligatorie tra sottofunzioni dirette sono espresse da `mustPrecede`. I contratti di ingresso e uscita sono associati mediante `hasInputContract` e `hasOutputContract`.
+Una `Function` identifica una capacità o responsabilità, indipendentemente dal processo che la realizza. Può essere decomposta mediante `hasSubFunction`; i vincoli di precedenza tra funzioni sono espressi da `mustPrecede`, anche quando le funzioni appartengono a sistemi distinti. I contratti di ingresso e uscita sono associati mediante `hasInputContract` e `hasOutputContract`.
 
 ### 1.2 Contratti, contenuti e memorizzazione
 
@@ -389,13 +389,11 @@ properties:
       it: deve precedere
     definition:
       en: >-
-        Specifies a mandatory functional precedence
-        between two functions belonging directly
-        to at least one common functional decomposition.
+        Specifies a mandatory functional precedence between two functions, independently of their system membership
+        or participation in the same functional decomposition.
       it: >-
-        Specifica una precedenza funzionale obbligatoria
-        tra due funzioni appartenenti direttamente
-        ad almeno una stessa decomposizione funzionale.
+        Specifica una precedenza funzionale obbligatoria tra due funzioni, indipendentemente
+        dalla loro appartenenza allo stesso sistema o alla stessa decomposizione funzionale.
 
   - iri: ddta:hasInputContract
     status: approved
@@ -438,11 +436,11 @@ properties:
 
 La proprietà non è transitiva. Se `A` contiene direttamente `B` e `B` contiene direttamente `C`, non viene inferito `A hasSubFunction C`. Questa scelta preserva la distinzione tra i livelli della decomposizione. L'insieme delle sottofunzioni dirette e indirette può essere recuperato mediante percorsi SPARQL.
 
-`mustPrecede` rappresenta un vincolo di precedenza funzionale obbligatorio tra due sottofunzioni dirette di almeno una stessa funzione composta. Non rappresenta la sequenza operativa degli Step di un `Process`, né descrive un'esecuzione effettivamente avvenuta.
+`mustPrecede` rappresenta un vincolo di precedenza funzionale obbligatorio tra due funzioni, anche se appartengono a sistemi differenti o a decomposizioni diverse. Non rappresenta la sequenza operativa degli Step di un `Process`, né descrive un'esecuzione effettivamente avvenuta. La precedenza non implica che la funzione successiva debba essere sempre attivata.
 
-La proprietà non è transitiva. La sua applicazione è soggetta ai vincoli strutturali descritti nella sezione 3.4.
+La proprietà non è transitiva. I vincoli documentali verificano l’assenza di cicli, senza richiedere una funzione composta comune.
 
-La relazione `mustPrecede` collega direttamente le identità delle funzioni. L'appartenenza a una decomposizione comune viene verificata mediante SHACL, ma il contesto della decomposizione non è rappresentato esplicitamente nella tripla RDF. Di conseguenza, quando gli stessi individui di `Function` sono riutilizzati in più decomposizioni, la relazione non può esprimere vincoli di precedenza differenti per ciascun contesto.
+La relazione `mustPrecede` collega direttamente le identità delle funzioni, senza richiedere una decomposizione funzionale comune. Il vincolo si interpreta nel contesto dell'attività alla quale partecipano entrambe le funzioni: la tripla RDF, da sola, non descrive una specifica esecuzione, un contesto di attivazione o un trasferimento di dati. Eventuali vincoli differenti secondo il contesto devono essere documentati separatamente.
 
 `hasInputContract` e `hasOutputContract` collegano una `Function` ai contratti che specificano rispettivamente i requisiti sugli ingressi e sulle uscite attese.
 
@@ -605,7 +603,6 @@ Una funzione può essere elementare, non richiedere ingressi informativi, non pr
 |---|---|
 | `FUN-02` | La decomposizione `hasSubFunction` non contiene cicli diretti o indiretti |
 | `FUN-04` | Le precedenze `mustPrecede` non contengono cicli diretti o indiretti |
-| `FUN-05` | Le funzioni collegate da `mustPrecede` sono sottofunzioni dirette di almeno una stessa funzione |
 | `FUN-06` | `hasInputContract` e `hasOutputContract` collegano individui della classe `Contract` |
 
 I controlli sui cicli comprendono anche i collegamenti di una funzione verso sé stessa.
@@ -640,23 +637,6 @@ constraints:
       SELECT $this
       WHERE {
         $this ddta:mustPrecede+ $this .
-      }
-
-  - id: FUN-05
-    type: sparql
-    message:
-      en: Precedence requires a common direct parent function.
-      it: La precedenza richiede una funzione
-          composta diretta comune.
-    select: |-
-      PREFIX ddta: <https://w3id.org/ddta/core#>
-      SELECT $this ?value
-      WHERE {
-        $this ddta:mustPrecede ?value .
-        FILTER NOT EXISTS {
-          ?parent ddta:hasSubFunction $this .
-          ?parent ddta:hasSubFunction ?value .
-        }
       }
 
   - id: FUN-06
@@ -704,22 +684,6 @@ ddta:FunctionShape
         """
     ] ;
 
-    sh:sparql [
-        sh:message
-            "Precedence requires a common direct parent function."@en ;
-        sh:select """
-            PREFIX ddta: <https://w3id.org/ddta/core#>
-            SELECT $this ?value
-            WHERE {
-                $this ddta:mustPrecede ?value .
-                FILTER NOT EXISTS {
-                    ?parent ddta:hasSubFunction $this .
-                    ?parent ddta:hasSubFunction ?value .
-                }
-            }
-        """
-    ] ;
-
     sh:property [
         sh:path ddta:hasInputContract ;
         sh:class ddta:Contract
@@ -732,8 +696,6 @@ ddta:FunctionShape
 ```
 
 I controlli `FUN-02` e `FUN-04` individuano percorsi circolari nelle rispettive relazioni.
-
-`FUN-05` verifica che le due funzioni collegate da una precedenza appartengano direttamente ad almeno una stessa decomposizione funzionale.
 
 `FUN-06` verifica che i contratti collegati siano classificati come individui di `Contract` nel grafo utilizzato dalla validazione.
 
@@ -789,7 +751,7 @@ ex:ImageVectorization
     a ddta:Function .
 ```
 
-L'esempio soddisfa i controlli `FUN-02`, `FUN-04` e `FUN-05`: non presenta cicli di decomposizione o precedenza e le funzioni coinvolte nelle precedenze sono sottofunzioni dirette di `ImagePreparation`.
+L'esempio soddisfa i controlli `FUN-02` e `FUN-04`: non presenta cicli di decomposizione o precedenza. L'appartenenza delle funzioni a `ImagePreparation` costituisce la decomposizione dell'esempio, ma non è una condizione necessaria per usare `mustPrecede`.
 
 Un processo che realizza `ImagePreparation` può adottare l'ordine operativo:
 
@@ -3286,7 +3248,7 @@ La direzione del canale è distinta dall'ordine delle comunicazioni.
 
 `hasSource` e `hasDestination` non stabiliscono quale comunicazione debba avvenire per prima.
 
-Quando una sequenza è funzionalmente obbligatoria, il vincolo può essere rappresentato mediante `mustPrecede` tra le funzioni coinvolte, nel rispetto delle regole di decomposizione definite nella scheda `Function`.
+Quando una sequenza è funzionalmente obbligatoria, il vincolo può essere rappresentato mediante `mustPrecede` tra le funzioni coinvolte, anche se appartengono a sistemi differenti.
 
 Non vengono introdotte proprietà `initiatedBy`, `firstSender` o altre relazioni temporali specifiche del canale.
 
@@ -4103,7 +4065,7 @@ L'assenza di predecessori o successori non determina automaticamente il ruolo di
 
 `hasNextStep` e `mustPrecede` descrivono relazioni differenti.
 
-`mustPrecede` rappresenta una precedenza obbligatoria tra funzioni appartenenti a una decomposizione funzionale.
+`mustPrecede` rappresenta una precedenza obbligatoria tra funzioni, anche quando appartengono a sistemi differenti.
 
 `hasNextStep` rappresenta invece un collegamento operativo possibile tra Step.
 

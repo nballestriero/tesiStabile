@@ -12,6 +12,61 @@ from .catalog import Catalog, RuleError
 from .common import dump_json, load_graph, local_name, qname_or_uri
 
 
+
+
+def _order_declared_sibling_edges(items, edges, predicates, diagnostics, group_name=''):
+    """Topological visual order of RDF-declared sibling precedence edges.
+
+    Graphical ordering ONLY: no new RDF triples, nodes, edges, or occurrences.
+    The ordering predicates are selected from the already compiled visual guide,
+    not hard-coded by ontology name. Keep disconnected items in their original
+    deterministic order. A cycle is diagnosed rather than arbitrarily broken.
+    """
+    if len(items) < 2 or not predicates:
+        return items
+    # Never reorder mixed containment/group blocks or repeated RDF identities.
+    if any(item.get('kind') != 'individual' for item in items):
+        return items
+    iris = [item['iri'] for item in items]
+    if len(set(iris)) != len(iris):
+        return items
+    index = {iri:i for i,iri in enumerate(iris)}
+    adjacency = {iri:set() for iri in iris}
+    indegree = {iri:0 for iri in iris}
+    for edge in edges:
+        if edge['predicate'] not in predicates:
+            continue
+        source, target = edge['source'], edge['target']
+        if source == target or source not in index or target not in index:
+            continue
+        if target not in adjacency[source]:
+            adjacency[source].add(target)
+            indegree[target] += 1
+    if not any(adjacency.values()):
+        return items
+    # Kahn topological sorting, with original order as deterministic tie-break.
+    import heapq
+    available = [(index[iri],iri) for iri in iris if indegree[iri] == 0]
+    heapq.heapify(available)
+    ordered = []
+    while available:
+        _, iri = heapq.heappop(available)
+        ordered.append(iri)
+        for successor in sorted(adjacency[iri], key=index.__getitem__):
+            indegree[successor] -= 1
+            if indegree[successor] == 0:
+                heapq.heappush(available, (index[successor], successor))
+    if len(ordered) != len(iris):
+        diagnostics.append({
+            'code':'CYCLIC_SIBLING_LAYOUT_ORDER', 'severity':'warning',
+            'group':group_name, 'individuals':sorted(iri for iri in iris if indegree[iri] > 0),
+            'predicates':sorted(predicates),
+            'message':'Precedenze cicliche: conservato ordine originale di emissione; nessuna inferenza RDF.'
+        })
+        return items
+    lookup = {item['iri']:item for item in items}
+    return [lookup[iri] for iri in ordered]
+
 def project(graph: Graph, rules: Catalog, *, focus=None, view='association', strict=False):
     diag = []
     defs = {}
@@ -290,10 +345,6 @@ def project(graph: Graph, rules: Catalog, *, focus=None, view='association', str
                      'message':'Più occorrenze grafiche per uno stesso IRI RDF; nessun nuovo individuo RDF creato',
                      'individuals':{k:len(v) for k,v in sorted(repeated.items())}})
     visible=set(occurrences)
-    direct_owners=defaultdict(set)
-    for child,parents in ownership.items():
-        if child in visible:
-            direct_owners[child]={p for p in parents if p in visible}
     edges=[]
     for pred,rule in sorted(rules.relations.items()):
         rep=rule['representation']
@@ -305,10 +356,6 @@ def project(graph: Graph, rules: Catalog, *, focus=None, view='association', str
             scope=rule.get('scope',{})
             if scope.get('subjectClass') and not matches(s,scope['subjectClass']):continue
             if scope.get('objectClass') and not matches(o,scope['objectClass']):continue
-            if scope.get('selectedSiblingFunctionsOnly'):
-                if not direct_owners[str(s)].intersection(direct_owners[str(o)]):
-                    diag.append({'code':'OUT_OF_SCOPE_PRECEDENCE','severity':'warning','relation':pred,'subject':str(s),'object':str(o)})
-                    continue
             mark(s,pred,o)
             src= str(s) if rep.get('source')!='object' else str(o)
             dst= str(o) if rep.get('destination')!='subject' else str(s)
@@ -337,6 +384,24 @@ def project(graph: Graph, rules: Catalog, *, focus=None, view='association', str
                     edges.append({'kind':'projection-edge','predicate':assoc,
                                   'rdfSubject':str(f),'rdfObject':str(channel),'source':str(source),'target':str(target),
                                   'rule':r,'label':r[name]['label'],'contractIri':str(c)})
+    # Order graphical siblings only where a rule explicitly describes a
+    # directed relationship scoped to selected sibling functions. The rule
+    # identifies the RDF predicate; this renderer contains no fixed CORE IRI.
+    order_predicates = {
+        name for name, rule in rules.relations.items()
+        if rule.get('scope',{}).get('selectedSiblingFunctionsOnly')
+        and rule.get('representation',{}).get('type') == 'directed-edge'
+        and rule.get('representation',{}).get('direction') == 'subject-to-object'
+    }
+    if order_predicates:
+        def order_nested_siblings(items, group_name=''):
+            for item in items:
+                if item.get('children'):
+                    item['children'] = order_nested_siblings(
+                        item['children'], item.get('key') or item.get('name') or group_name)
+            return _order_declared_sibling_edges(items, edges, order_predicates, diag, group_name)
+        result_roots = order_nested_siblings(result_roots)
+
     # Relazioni selezionate senza regola grafica: mai inventare un edge.
     graphical_props={str(iri(x)) for x in rules.relations if iri(x) is not None}
     for rule in rules.groups.values():

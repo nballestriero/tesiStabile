@@ -37,6 +37,10 @@ def load_graph(ttl_paths: Iterable[Path]) -> Graph:
     graph = Graph()
     for path in ttl_paths:
         graph.parse(path, format='turtle')
+    # Preserve the canonical CORE CURIE independently of Turtle source prefixes.
+    # The RDF identity is the full IRI; the graphical catalog uses ddta: labels.
+    from rdflib import Namespace
+    graph.bind('ddta', Namespace('https://w3id.org/ddta/core#'), replace=True, override=True)
     return graph
 
 

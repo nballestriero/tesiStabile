@@ -1822,7 +1822,7 @@ flowchart TB
 
 `mustPrecede` è una **freccia direzionale tratteggiata grigio scuro** (`#374151`) **dalla funzione che deve precedere alla funzione successiva**. L'etichetta `mustPrecede` è un piccolo rettangolo **arrotondato**, con **interno grigio chiaro** (`#F3F4F6`), **bordo grigio scuro** (`#374151`) e **scritta dello stesso grigio scuro**. Non impiegare azzurro o blu.
 
-La freccia rappresenta una relazione distinta da `hasSubFunction`: l'appartenenza delle sottofunzioni è resa per contenimento e la precedenza mediante questa freccia. Secondo il CORE, si mostrano soltanto le relazioni `mustPrecede` dichiarate o selezionate tra sottofunzioni dirette di una stessa funzione composta, non un ordine inferito dalla sola posizione grafica.
+La freccia rappresenta una relazione distinta da `hasSubFunction`: la precedenza tra due `ddta:Function` è rappresentata esclusivamente quando la tripla `ddta:mustPrecede` è selezionata nel sottografo RDF, anche se le funzioni appartengono a sistemi, ambienti o composizioni funzionali differenti. La collocazione grafica non crea precedenze implicite. La relazione non implica attivazione obbligatoria della funzione successiva, trasferimento di dati né esecuzione immediatamente successiva. `mustPrecede` non è dichiarata transitiva; il vincolo deve essere interpretato nel contesto funzionale pertinente.
 
 ### 20.3 Dichiarazione YAML
 
@@ -1852,10 +1852,9 @@ label:
 scope:
   subjectClass: ddta:Function
   objectClass: ddta:Function
-  selectedSiblingFunctionsOnly: true
 ```
 
-### 20.4 Traduzione Mermaid — precedenza tra sottofunzioni
+### 20.4 Traduzione Mermaid — precedenza tra funzioni
 
 Il nodo centrale `MP` rappresenta **soltanto l'etichetta grafica** della relazione. Le due porzioni tratteggiate sono rese con una sola punta di freccia verso la funzione successiva; `MP` non corrisponde a un individuo RDF. La direzione del diagramma non sostituisce l'esistenza di `mustPrecede` nel grafo.
 
