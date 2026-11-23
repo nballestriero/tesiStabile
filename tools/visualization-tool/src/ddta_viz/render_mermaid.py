@@ -261,6 +261,30 @@ def render(ir, rules:Catalog):
             if css(ls):edge_styles.append((str(link_idx),css(ls)))
             link_idx += 1
 
+    def projection_edge_rule(edge):
+        # All graphical properties of projected communication labels originate
+        # in the compiled guide, never in fixed Python color/shape constants.
+        rule=edge['rule']
+        role_key=edge.get('renderRole')
+        if role_key not in ('outputEdge', 'inputEdge'):
+            raise RuleError('Proiezione comunicativa priva del ruolo grafico dichiarato')
+        expected=rule.get(role_key)
+        if not isinstance(expected,dict) or expected.get('label') != edge.get('label'):
+            raise RuleError('Proiezione comunicativa: etichetta diversa dal ruolo dichiarato in YAML')
+        if expected.get('direction') != 'forward':
+            raise RuleError('Proiezione comunicativa: direzione non supportata dalla regola YAML')
+        label_style=rule.get('labelStyle')
+        if not isinstance(label_style,dict) or label_style.get('representation')!='rounded-inline-node':
+            raise RuleError('Proiezione funzionale priva di render.labelStyle (rounded-inline-node)')
+        if label_style.get('shape')!='rounded':
+            raise RuleError('Etichetta funzionale: shape rounded richiesta dalla guida')
+        required=('fill','stroke','color','strokeWidth','cornerRadius')
+        missing=[key for key in required if key not in label_style]
+        if missing:
+            raise RuleError('Etichetta funzionale incompleta: '+', '.join(missing))
+        return {'label': dict(label_style, text=edge.get('label')),
+                'line': rule.get('line',{})}
+
     def emit_bucket(container,depth=1):
         # An edge emitted before a Mermaid subgraph is closed is scoped
         # geometrically to that subgraph.  No new RDF relation is asserted.
@@ -268,7 +292,7 @@ def render(ir, rules:Catalog):
             if edge['kind']=='semantic-relation-with-visual-symbol':
                 add_edge(src,dst,edge['rule'],mode=edge['kind'])
             elif edge['kind']=='projection-edge':
-                r={'label':{'text':edge.get('label')},'line':edge['rule'].get('line',{})}
+                r=projection_edge_rule(edge)
                 add_edge(src,dst,r,label=edge.get('label'))
             else:
                 add_edge(src,dst,edge['rule'])
@@ -427,7 +451,7 @@ def render(ir, rules:Catalog):
         if edge['kind']=='semantic-relation-with-visual-symbol':
             add_edge(src,dst,edge['rule'],mode=edge['kind'])
         elif edge['kind']=='projection-edge':
-            r={'label':{'text':edge.get('label')},'line':edge['rule'].get('line',{})}
+            r=projection_edge_rule(edge)
             add_edge(src,dst,r,label=edge.get('label'))
         else:
             add_edge(src,dst,edge['rule'])
@@ -461,8 +485,8 @@ def main(argv=None):
     ir=json.loads(args.projection.read_text(encoding='utf-8'))
     mmd=render(ir,Catalog(args.rules))
     args.out_dir.mkdir(parents=True,exist_ok=True)
-    (args.out_dir/'graph.mmd').write_text(mmd,encoding='utf-8')
-    (args.out_dir/'graph.md').write_text('```mermaid\n'+mmd+'```\n',encoding='utf-8')
+    (args.out_dir/'graph.mmd').write_text(mmd,encoding='utf-8',newline='\n')
+    (args.out_dir/'graph.md').write_text('```mermaid\n'+mmd+'```\n',encoding='utf-8',newline='\n')
     print(f'Grafico Mermaid -> {args.out_dir}')
     return 0
 

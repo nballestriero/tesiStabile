@@ -1,9 +1,45 @@
 # DDTA — Regole grafiche dell'ontologia CORE
-**Fonte semantica:** `DDTA_CORE.md` (modulo `core`), conservato nella stessa cartella.  
-**Destinazione prevista:** `ontologies/core/DDTA_CORE_VISUALIZATION.md`.  
-**Ambito:** `Function`, `hasSubFunction`, `System`, `hasPrimaryFunction`, `hasSupportFunction`, `Environment`, `hasOperationalEnvironment`, `makesAvailable`, `Store`, `stores`, `StoredContent`, `CommunicationChannel`, `CommunicationFunction`, `usesChannel`, `Boundary`, `hasBoundary`, `encloses`, `Contract`, `ContractElement`, `hasContractElement`, `hasInputContract`, `hasOutputContract`, `mustPrecede`, `Resource`, `Process`, `ProcessStep`, `hasStep`, `hasNextStep`, `realizesFunction`.
+**Fonte semantica:** `DDTA_CORE.md` (modulo `core`).  
+**Documento:** `DDTA_CORE_VISUALIZATION.md`.  
+**Ambito:** `Function`, `hasSubFunction`, `System`, `hasPrimaryFunction`, `hasSupportFunction`, `Environment`, `hasOperationalEnvironment`, `makesAvailable`, `Store`, `stores`, `StoredContent`, `CommunicationChannel`, `CommunicationFunction`, `usesChannel`, `usesChannelForInput`, `usesChannelForOutput`, `Boundary`, `hasBoundary`, `encloses`, `Contract`, `ContractElement`, `hasContractElement`, `hasInputContract`, `hasOutputContract`, `mustPrecede`, `Resource`, `Process`, `ProcessStep`, `hasStep`, `hasNextStep`, `realizesFunction`.
 
 Questo documento stabilisce **esclusivamente regole di rappresentazione grafica**. Le classi, le proprietà e il loro significato appartengono alle ontologie DDTA. Le query SPARQL selezionano il sottografo da mostrare; queste schede ne determinano forma, colore, contenimento visivo, icone e layout. Non vengono introdotte nuove triple RDF per soddisfare esigenze grafiche.
+
+## 0. Rigenerazione e controllo deterministico della guida
+
+Questa guida contiene **le regole di rappresentazione** (blocchi `yaml ddta-visualization`) e **gli esempi riproducibili** (Turtle sorgente seguito dal Mermaid generato). Il Turtle specifica il sottografo RDF; il Mermaid è un risultato del renderer DDTA. Non correggere manualmente i blocchi Mermaid: modificare il Turtle, le regole YAML oppure il renderer e rigenerare l'output.
+
+I comandi seguenti si eseguono **dalla directory che contiene `regenerate_core_guide_from_embedded_ttl.py`**. Il file della guida e la directory dei risultati sono argomenti espliciti, così le istruzioni non riportano percorsi locali, nomi di repository o configurazioni personali. È richiesto un interprete Python con le dipendenze del toolkit, incluse `rdflib` e `PyYAML`.
+
+**A. Anteprima (nessuna modifica alla guida):**
+
+```powershell
+python .\regenerate_core_guide_from_embedded_ttl.py --repo-root "<radice-delle-specifiche>" --guide "<file-della-guida>" --out-dir "<directory-di-output>" --mode preview --allow-incomplete-endpoints
+```
+
+La directory di output contiene il Markdown candidato, il diff, il rapporto e i Mermaid individuali; aprire la candidata in un editor per la revisione visiva.
+
+**B. Controllo di sincronizzazione, senza modificare la guida:**
+
+```powershell
+python .\regenerate_core_guide_from_embedded_ttl.py --repo-root "<radice-delle-specifiche>" --guide "<file-della-guida>" --out-dir "<directory-di-output>" --mode check --allow-incomplete-endpoints
+```
+
+La modalità `check` segnala differenze tra il Markdown esistente e quello generato dal renderer Python corrente. Eseguire il controllo dopo modifiche a Python, alle regole YAML o al Turtle degli esempi.
+
+**C. Applicazione esplicita, dopo revisione del diff:**
+
+```powershell
+python .\regenerate_core_guide_from_embedded_ttl.py --repo-root "<radice-delle-specifiche>" --guide "<file-della-guida>" --out-dir "<directory-di-output>" --mode apply --allow-incomplete-endpoints
+```
+
+La modalità `apply` crea una copia di backup della guida prima di aggiornare i blocchi Mermaid. Non riscrive i Turtle sorgente né le dichiarazioni YAML della guida.
+
+**Limite della CLI corrente.** Nonostante l'esecuzione dalla directory del tool e gli argomenti espliciti, `--repo-root` serve ancora a individuare il renderer Python e la guida delle regole YAML secondo il layout attualmente supportato. La **portabilità rispetto a un albero di cartelle arbitrario** richiederà di esporre o risolvere in modo indipendente questi percorsi nella CLI; non è garantita dalla sola forma dei comandi qui mostrati. La struttura e le responsabilità dei file saranno descritte in un documento separato al completamento del toolkit.
+
+**Validazione e limiti.** Due generazioni identiche verificano il determinismo del codice Mermaid, non la correttezza visiva della preview né la conformità SHACL degli esempi. Gli esempi 07, 12, 13, 14, 19 e 26 hanno ancora canali con estremità incomplete: `--allow-incomplete-endpoints` permette temporaneamente la sola verifica grafica e ne segnala le lacune nel rapporto. Una volta corretti gli esempi, rimuovere tale opzione per rendere il controllo rigoroso.
+
+---
 
 ## 1. Principi di rappresentazione e uso delle icone
 
@@ -110,17 +146,33 @@ mermaid:
 
 Il seguente esempio illustra due casi significativi: un nodo con nome e tipo lunghi e un `subgraph` con nome lungo. Il titolo e il tipo devono essere leggibili **integralmente**, centrati e del **medesimo colore del bordo**. Nessun rettangolo bianco aggiuntivo deve coprire il fondo colorato.
 
+<!-- DDTA-EXAMPLE-01 -->
+
+**Turtle sorgente dell’esempio 01 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ClinicalResultCommunication a ddta:CommunicationFunction .
+ex:ImagePreparationProcess a ddta:Process ; ddta:hasStep ex:NormalizeImage .
+ex:NormalizeImage a ddta:ProcessStep .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_4d2fae64b52649("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalResultCommunication</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>")
-    subgraph O_c19983a8cc7be7["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ImagePreparationProcess</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:Process</span></div>"]
+    O_2e262aff734df2("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalResultCommunication</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>")
+    subgraph O_cfededaf0e4b6b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ImagePreparationProcess</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:Process</span></div>"]
         direction LR
-        O_ebf75c1e71d138["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>NormalizeImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
+        O_08d5a684b7a373["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>NormalizeImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
     end
-    style O_4d2fae64b52649 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
-    style O_ebf75c1e71d138 fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_c19983a8cc7be7 fill:#F8FAFC,stroke:#7B8794,color:#7B8794,stroke-width:2px,rx:8px,ry:8px
+    classDef DDTA_C_a6bdc037a9c8 fill:#F8FAFC,stroke:#7B8794,color:#7B8794,stroke-width:2px,rx:8px,ry:8px
+    class O_cfededaf0e4b6b DDTA_C_a6bdc037a9c8
+    classDef DDTA_C_a6141e99742b fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
+    class O_08d5a684b7a373 DDTA_C_a6141e99742b
+    classDef DDTA_C_8f7a37e1c601 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
+    class O_2e262aff734df2 DDTA_C_8f7a37e1c601
 ```
 
 ### 1.6 Esempi grafici e responsabilità delle schede
@@ -197,30 +249,55 @@ container:
 
 **Funzione senza figli selezionati:** nodo con forma `rounded`, tradotto dal generatore secondo la regola YAML di questa scheda.
 
+<!-- DDTA-EXAMPLE-02 -->
+
+**Turtle sorgente dell’esempio 02 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:FunzioneA a ddta:Function .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_5229dc1eb3f1e0("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>FunzioneA</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
-    style O_5229dc1eb3f1e0 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
+    O_0a701cf71b1c16("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>FunzioneA</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+    classDef DDTA_C_1a97e3c85c24 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
+    class O_0a701cf71b1c16 DDTA_C_1a97e3c85c24
 ```
 
 **Funzione con figli selezionati:** il contenitore mantiene lo stile di `Function`; i figli e i gruppi nell'esempio derivano dalle proprie regole di relazione (schede 4 e 18). Il generatore applica `container.cornerRadius` dello YAML della classe.
 
+<!-- DDTA-EXAMPLE-03 -->
+
+**Turtle sorgente dell’esempio 03 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:FunzionePadre a ddta:Function ; ddta:hasSubFunction ex:SottofunzioneA, ex:SottofunzioneB .
+ex:SottofunzioneA a ddta:Function .
+ex:SottofunzioneB a ddta:Function .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph O_6abf117484a994["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>FunzionePadre</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
+    subgraph O_428b44178dfc8c["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>FunzionePadre</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
         direction TB
-        subgraph G_f0d34834eb66ee["Subfunctions"]
+        subgraph G_ce041544eae107["Subfunctions"]
             direction TB
-            O_cbecf2ad287211("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SottofunzioneA</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
-            O_672b9b596c5667("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SottofunzioneB</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+            O_b88926004c738b("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SottofunzioneA</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+            O_27bcf592eb2a91("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SottofunzioneB</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
         end
     end
-    style O_cbecf2ad287211 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_672b9b596c5667 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style G_f0d34834eb66ee fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_6abf117484a994 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
+    classDef DDTA_C_1a97e3c85c24 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
+    class G_ce041544eae107,O_27bcf592eb2a91,O_b88926004c738b DDTA_C_1a97e3c85c24
+    classDef DDTA_C_bfb810e84373 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
+    class O_428b44178dfc8c DDTA_C_bfb810e84373
 ```
 
 **Precisazione dell’esempio:** il riquadro `Subfunctions` ha funzione esclusivamente grafica; riunisce le sottofunzioni visibili, anche in assenza di contratti. La sua presenza non modifica la semantica di `ddta:hasSubFunction`.
@@ -317,11 +394,23 @@ container:
 
 Quando nessun gruppo funzionale è selezionato, `System` viene rappresentato come nodo rettangolare:
 
+<!-- DDTA-EXAMPLE-04 -->
+
+**Turtle sorgente dell’esempio 04 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:SistemaEsempio a ddta:System .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_35700bd6769a8b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#2563EB'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#2563EB'>SistemaEsempio</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#2563EB'>ddta:System</span></div>"]
-    style O_35700bd6769a8b fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
+    O_386f8143a10445["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#2563EB'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#2563EB'>SistemaEsempio</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#2563EB'>ddta:System</span></div>"]
+    classDef DDTA_C_ec3c1934ce4a fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
+    class O_386f8143a10445 DDTA_C_ec3c1934ce4a
 ```
 
 Quando sono selezionate le funzioni primarie e di supporto, il renderer utilizza `subgraph` annidati secondo la regola della scheda seguente.
@@ -416,54 +505,88 @@ layout:
 
 L'esempio è **illustrativo** e non dichiara nuove istanze RDF. Il collegamento invisibile `PRIMARY ~~~ SUPPORT`, nel contenitore con `direction LR`, è un vincolo di disposizione sinistra → destra, senza significato ontologico. La funzione composta conserva gli angoli arrotondati grazie a `rx/ry`.
 
+<!-- DDTA-EXAMPLE-05 -->
+
+**Turtle sorgente dell’esempio 05 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:SistemaEsempio a ddta:System ;
+    ddta:hasPrimaryFunction ex:FunzionePrimaria ;
+    ddta:hasSupportFunction ex:FunzioneSupporto .
+ex:FunzionePrimaria a ddta:Function ;
+    ddta:hasSubFunction ex:SottofunzioneA, ex:SottofunzioneB .
+ex:FunzioneSupporto a ddta:Function .
+ex:SottofunzioneA a ddta:Function .
+ex:SottofunzioneB a ddta:Function .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph O_35700bd6769a8b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#2563EB'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#2563EB'>SistemaEsempio</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#2563EB'>ddta:System</span></div>"]
+    subgraph O_386f8143a10445["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#2563EB'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#2563EB'>SistemaEsempio</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#2563EB'>ddta:System</span></div>"]
         direction LR
-        subgraph G_7074dbe80045e9["Primary Functions"]
+        subgraph G_9525a57f3fb839["Primary Functions"]
             direction LR
-            subgraph O_6f34c37824ee2d["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>FunzionePrimaria</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
+            subgraph O_00d1d10b206d91["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>FunzionePrimaria</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
                 direction TB
-                subgraph G_268df67b13d240["Subfunctions"]
+                subgraph G_9a3518ad0e3739["Subfunctions"]
                     direction TB
-                    O_477beae0442577("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SottofunzioneA</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
-                    O_a6fb3bb40ae533("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SottofunzioneB</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+                    O_9e4cf9facabfa6("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SottofunzioneA</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+                    O_e62334e9208046("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SottofunzioneB</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
                 end
             end
         end
-        subgraph G_36fd1ad1d3edab["Support Functions"]
+        subgraph G_d75ae240a50718["Support Functions"]
             direction LR
-            O_e6b367e965029a("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>FunzioneSupporto</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+            O_bd762902d276f9("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>FunzioneSupporto</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
         end
     end
-    style O_477beae0442577 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_a6fb3bb40ae533 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style G_268df67b13d240 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_6f34c37824ee2d fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
-    style G_7074dbe80045e9 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_e6b367e965029a fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style G_36fd1ad1d3edab fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_35700bd6769a8b fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
+    classDef DDTA_C_ec3c1934ce4a fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
+    class O_386f8143a10445 DDTA_C_ec3c1934ce4a
+    classDef DDTA_C_764b3983e628 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px,stroke-dasharray:5 4
+    class G_9525a57f3fb839,G_d75ae240a50718 DDTA_C_764b3983e628
+    classDef DDTA_C_1a97e3c85c24 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
+    class G_9a3518ad0e3739,O_9e4cf9facabfa6,O_bd762902d276f9,O_e62334e9208046 DDTA_C_1a97e3c85c24
+    classDef DDTA_C_bfb810e84373 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
+    class O_00d1d10b206d91 DDTA_C_bfb810e84373
 ```
 
 I gruppi e il loro ordine derivano dalla configurazione grafica, non sono individui RDF. I collegamenti di impaginazione Mermaid, come `~~~`, non sono archi del modello né appartengono ai risultati delle query SPARQL.
 
 **Esempio ridotto del caso `providesFunction` senza ruolo specifico selezionato:** il riquadro *Not Yet Defined* usa **gli stessi colori e bordi dei gruppi funzionali**; la funzione conserva nome, tipo e stile abituale.
 
+<!-- DDTA-EXAMPLE-06 -->
+
+**Turtle sorgente dell’esempio 06 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:SistemaEsempio a ddta:System ;
+    ddta:providesFunction ex:FunzioneSenzaRuoloEsplicito .
+ex:FunzioneSenzaRuoloEsplicito a ddta:Function .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph O_35700bd6769a8b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#2563EB'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#2563EB'>SistemaEsempio</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#2563EB'>ddta:System</span></div>"]
+    subgraph O_386f8143a10445["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#2563EB'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#2563EB'>SistemaEsempio</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#2563EB'>ddta:System</span></div>"]
         direction LR
-        subgraph G_237fc666e21623["Not Yet Defined"]
+        subgraph G_2c6a1cd66d71fd["Not Yet Defined"]
             direction LR
-            O_5c80b530cfe5bd("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>FunzioneSenzaRuoloEsplicito</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+            O_2e5b5fd3689150("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>FunzioneSenzaRuoloEsplicito</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
         end
     end
-    style O_5c80b530cfe5bd fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style G_237fc666e21623 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_35700bd6769a8b fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
+    classDef DDTA_C_ec3c1934ce4a fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
+    class O_386f8143a10445 DDTA_C_ec3c1934ce4a
+    classDef DDTA_C_764b3983e628 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px,stroke-dasharray:5 4
+    class G_2c6a1cd66d71fd DDTA_C_764b3983e628
+    classDef DDTA_C_1a97e3c85c24 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
+    class O_2e5b5fd3689150 DDTA_C_1a97e3c85c24
 ```
 
 ### 6.5 Limiti di proiezione
@@ -633,78 +756,102 @@ I nomi sono illustrativi: non costituiscono individui o relazioni aggiunti al mo
 
 Le icone nel codice sottostante derivano dai tre SVG locali del catalogo. I canali e gli Store dell'esempio utilizzano rispettivamente le regole grafiche delle schede 11 e 8. Il gruppo `Stores` conserva l’icona verde **in basso**, distinta dalle icone grigie dei singoli Store. Il generatore deve inserirle mediante `@{ img: "data:image/svg+xml;base64,...", h: 32, constraint: "on" }`. Per evitare sfondi neri, l'esempio dichiara il tema `base` e stili espliciti per i nodi immagine e le didascalie. Gli SVG non sono incorporati nell'ontologia RDF: sono contenuti **soltanto nel Mermaid generato**.
 
+<!-- DDTA-EXAMPLE-07 -->
+
+**Turtle sorgente dell’esempio 07 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ExampleEnvironment a ddta:Environment ;
+    ddta:makesAvailable ex:Channel_A, ex:Channel_B, ex:Store_A, ex:Store_B, ex:Resource_A .
+ex:ExampleSystem a ddta:System ;
+    ddta:hasOperationalEnvironment ex:ExampleEnvironment ;
+    ddta:hasPrimaryFunction ex:PrimaryFunction ;
+    ddta:hasSupportFunction ex:SupportFunction .
+ex:PrimaryFunction a ddta:Function ;
+    ddta:hasSubFunction ex:SubFunction_A, ex:SubFunction_B .
+ex:SupportFunction a ddta:Function .
+ex:SubFunction_A a ddta:Function .
+ex:SubFunction_B a ddta:Function .
+ex:Channel_A a ddta:CommunicationChannel .
+ex:Channel_B a ddta:CommunicationChannel .
+ex:Store_A a ddta:Store .
+ex:Store_B a ddta:Store .
+ex:Resource_A a ddta:Resource .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph O_b22a5f188fb181["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#45845B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#45845B'>ExampleEnvironment</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#45845B'>ddta:Environment</span></div>"]
+    subgraph O_e307dd9f64b555["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#45845B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#45845B'>ExampleEnvironment</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#45845B'>ddta:Environment</span></div>"]
         direction TB
-        subgraph G_a3b0c9ff7f01dc["Associated Systems"]
+        subgraph G_646f4b97d2a998["Associated Systems"]
             direction TB
-            subgraph O_d7ecdadcb7f37f["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#2563EB'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#2563EB'>ExampleSystem</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#2563EB'>ddta:System</span></div>"]
+            subgraph O_889b68b43ec992["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#2563EB'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#2563EB'>ExampleSystem</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#2563EB'>ddta:System</span></div>"]
                 direction LR
-                subgraph G_b59c69ba2bddc8["Primary Functions"]
+                subgraph G_34a527d4454da7["Primary Functions"]
                     direction LR
-                    subgraph O_2e0eaa627ae670["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>PrimaryFunction</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
+                    subgraph O_8c680782e96d8e["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>PrimaryFunction</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
                         direction TB
-                        subgraph G_ab1044008fa2a9["Subfunctions"]
+                        subgraph G_c98072a3174c26["Subfunctions"]
                             direction TB
-                            O_b55c5cd0fa310f("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SubFunction_A</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
-                            O_29eaf68c414ad1("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SubFunction_B</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+                            O_173eeb5f6c9807("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SubFunction_A</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+                            O_b83284f66a2f7c("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SubFunction_B</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
                         end
                     end
                 end
-                subgraph G_b8534e74858937["Support Functions"]
+                subgraph G_bad0d65f041af1["Support Functions"]
                     direction LR
-                    O_1f5f16a813e4c1("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SupportFunction</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+                    O_417dc6ec5ccb86("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>SupportFunction</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
                 end
             end
         end
         subgraph G_a95eb6495b4a43["Available Resources"]
             direction TB
-            subgraph G_c3183e9372aa66[" "]
+            subgraph G_3f4ad27c3e8c41[" "]
                 direction TB
-                O_db10eb2227be5b("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>Channel_A</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
-                O_8887f367cc08f1("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>Channel_B</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
-                G_f8585e12704afd["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSI5IiB5PSIyIiB3aWR0aD0iNiIgaGVpZ2h0PSI2IiByeD0iMSIvPjxyZWN0IHg9IjIiIHk9IjE2IiB3aWR0aD0iNiIgaGVpZ2h0PSI2IiByeD0iMSIvPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjYiIGhlaWdodD0iNiIgcng9IjEiLz48cGF0aCBkPSJNMTIgOHY0TTUgMTZ2LTRoMTR2NCIvPjwvc3ZnPg==' width='32' height='32'/>Communication Channels"]
-                O_8887f367cc08f1 ~~~ G_f8585e12704afd
+                O_8349ace9b43148("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>Channel_A</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
+                O_716c25dac34739("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>Channel_B</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
+                G_92531a85164d92["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSI5IiB5PSIyIiB3aWR0aD0iNiIgaGVpZ2h0PSI2IiByeD0iMSIvPjxyZWN0IHg9IjIiIHk9IjE2IiB3aWR0aD0iNiIgaGVpZ2h0PSI2IiByeD0iMSIvPjxyZWN0IHg9IjE2IiB5PSIxNiIgd2lkdGg9IjYiIGhlaWdodD0iNiIgcng9IjEiLz48cGF0aCBkPSJNMTIgOHY0TTUgMTZ2LTRoMTR2NCIvPjwvc3ZnPg==' width='32' height='32'/>Communication Channels"]
+                O_716c25dac34739 ~~~ G_92531a85164d92
             end
-            subgraph G_328c17caf5d7b3[" "]
+            subgraph G_d3e1b6bb1ae829[" "]
                 direction TB
-                O_662a5156ff6158("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>Store_A</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>")
-                O_02e93f38a1d439("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>Store_B</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>")
-                G_059e1438402edf["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1IiByeD0iOSIgcnk9IjMiLz48cGF0aCBkPSJNMyA1djE0YzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTNWNSIvPjxwYXRoIGQ9Ik0zIDEyYzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTMiLz48L3N2Zz4=' width='32' height='32'/>Stores"]
-                O_02e93f38a1d439 ~~~ G_059e1438402edf
+                O_9c9e716ed63da2("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>Store_A</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>")
+                O_3b68a35d6e5291("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>Store_B</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>")
+                G_d68c3997431263["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1IiByeD0iOSIgcnk9IjMiLz48cGF0aCBkPSJNMyA1djE0YzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTNWNSIvPjxwYXRoIGQ9Ik0zIDEyYzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTMiLz48L3N2Zz4=' width='32' height='32'/>Stores"]
+                O_3b68a35d6e5291 ~~~ G_d68c3997431263
             end
-            subgraph G_b3e97fb869b201[" "]
+            subgraph G_bc610efb19361e[" "]
                 direction TB
-                O_a4d2ee50ecb615["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#111827'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#111827'>Resource_A</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#111827'>ddta:Resource</span></div>"]
-                G_1f6bb9cc223aa2["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIyLjUiIHdpZHRoPSIxOCIgaGVpZ2h0PSI4IiByeD0iMS41Ii8+PHJlY3QgeD0iMyIgeT0iMTMuNSIgd2lkdGg9IjE4IiBoZWlnaHQ9IjgiIHJ4PSIxLjUiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSI2LjUiIHI9Ii42IiBmaWxsPSIjNDU4NDVCIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSIxNy41IiByPSIuNiIgZmlsbD0iIzQ1ODQ1QiIgc3Ryb2tlPSJub25lIi8+PHBhdGggZD0iTTEwIDYuNWg3TTEwIDE3LjVoNyIvPjwvc3ZnPg==' width='32' height='32'/>Other Resources"]
-                O_a4d2ee50ecb615 ~~~ G_1f6bb9cc223aa2
+                O_ec4bac6e648ec0["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#111827'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#111827'>Resource_A</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#111827'>ddta:Resource</span></div>"]
+                G_d78031c40b1390["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cmVjdCB4PSIzIiB5PSIyLjUiIHdpZHRoPSIxOCIgaGVpZ2h0PSI4IiByeD0iMS41Ii8+PHJlY3QgeD0iMyIgeT0iMTMuNSIgd2lkdGg9IjE4IiBoZWlnaHQ9IjgiIHJ4PSIxLjUiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSI2LjUiIHI9Ii42IiBmaWxsPSIjNDU4NDVCIiBzdHJva2U9Im5vbmUiLz48Y2lyY2xlIGN4PSI2LjUiIGN5PSIxNy41IiByPSIuNiIgZmlsbD0iIzQ1ODQ1QiIgc3Ryb2tlPSJub25lIi8+PHBhdGggZD0iTTEwIDYuNWg3TTEwIDE3LjVoNyIvPjwvc3ZnPg==' width='32' height='32'/>Other Resources"]
+                O_ec4bac6e648ec0 ~~~ G_d78031c40b1390
             end
         end
     end
-    style O_b55c5cd0fa310f fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_29eaf68c414ad1 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style G_ab1044008fa2a9 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_2e0eaa627ae670 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
-    style G_b59c69ba2bddc8 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_1f5f16a813e4c1 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style G_b8534e74858937 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_d7ecdadcb7f37f fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
-    style G_a3b0c9ff7f01dc fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px
-    style O_db10eb2227be5b fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
-    style O_8887f367cc08f1 fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
-    style G_f8585e12704afd fill:transparent,stroke:transparent,stroke-width:0px
-    style G_c3183e9372aa66 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_662a5156ff6158 fill:#F1F5F9,stroke:#64748B,color:#64748B,stroke-width:1.5px
-    style O_02e93f38a1d439 fill:#F1F5F9,stroke:#64748B,color:#64748B,stroke-width:1.5px
-    style G_059e1438402edf fill:transparent,stroke:transparent,stroke-width:0px
-    style G_328c17caf5d7b3 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_a4d2ee50ecb615 fill:#FFFFFF,stroke:#111827,color:#111827,stroke-width:1.5px
-    style G_1f6bb9cc223aa2 fill:transparent,stroke:transparent,stroke-width:0px
-    style G_b3e97fb869b201 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px,stroke-dasharray:5 4
-    style G_a95eb6495b4a43 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px
-    style O_b22a5f188fb181 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px
+    classDef DDTA_C_ec3c1934ce4a fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
+    class O_889b68b43ec992 DDTA_C_ec3c1934ce4a
+    classDef DDTA_C_764b3983e628 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px,stroke-dasharray:5 4
+    class G_34a527d4454da7,G_bad0d65f041af1 DDTA_C_764b3983e628
+    classDef DDTA_C_47a0c203a3c4 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px
+    class G_646f4b97d2a998,G_a95eb6495b4a43,O_e307dd9f64b555 DDTA_C_47a0c203a3c4
+    classDef DDTA_C_f87c22e49ae1 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px,stroke-dasharray:5 4
+    class G_3f4ad27c3e8c41,G_bc610efb19361e,G_d3e1b6bb1ae829 DDTA_C_f87c22e49ae1
+    classDef DDTA_C_1ae4e3c918ad fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
+    class O_716c25dac34739,O_8349ace9b43148 DDTA_C_1ae4e3c918ad
+    classDef DDTA_C_2c6e0269ee60 fill:#F1F5F9,stroke:#64748B,color:#64748B,stroke-width:1.5px
+    class O_3b68a35d6e5291,O_9c9e716ed63da2 DDTA_C_2c6e0269ee60
+    classDef DDTA_C_069d7d57acd8 fill:#FFFFFF,stroke:#111827,color:#111827,stroke-width:1.5px
+    class O_ec4bac6e648ec0 DDTA_C_069d7d57acd8
+    classDef DDTA_C_1a97e3c85c24 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
+    class G_c98072a3174c26,O_173eeb5f6c9807,O_417dc6ec5ccb86,O_b83284f66a2f7c DDTA_C_1a97e3c85c24
+    classDef DDTA_C_bfb810e84373 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
+    class O_8c680782e96d8e DDTA_C_bfb810e84373
+    classDef DDTA_C_dd44c4d967c8 fill:transparent,stroke:transparent,stroke-width:0px
+    class G_92531a85164d92,G_d68c3997431263,G_d78031c40b1390 DDTA_C_dd44c4d967c8
     linkStyle 0 stroke:transparent,stroke-width:0px,opacity:0
     linkStyle 1 stroke:transparent,stroke-width:0px,opacity:0
     linkStyle 2 stroke:transparent,stroke-width:0px,opacity:0
@@ -846,29 +993,43 @@ Il controllo `multipleParents: error` è **solo un limite prudenziale di proiezi
 
 Il codice seguente mostra **MainStore**, due Store figli affiancati e quattro `StoredContent`. Ogni Store usa un piccolo **subgraph di intestazione**, che mantiene l'icona database sulla sinistra e il nome sulla destra, sempre **sopra i contenuti**. Il layout `direction LR` insieme al collegamento invisibile `IMAGES ~~~ MODELS` favorisce l'ordine orizzontale dei sottostore, senza attribuire una relazione RDF tra loro. Le icone sono incorporate dal file SVG locale, con colore adattato al bordo grigio (`#64748B`) e proporzioni preservate mediante `constraint: "on"`. Il colore nello SVG incorporato riguarda soltanto l'aspetto grafico: **non** modifica l'icona sorgente né l'ontologia.
 
+<!-- DDTA-EXAMPLE-08 -->
+
+**Turtle sorgente dell’esempio 08 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:MainStore a ddta:Store ; ddta:stores ex:ImagesStore, ex:ModelsStore .
+ex:ImagesStore a ddta:Store ; ddta:stores ex:Image001, ex:Image002, ex:Image003 .
+ex:ModelsStore a ddta:Store ; ddta:stores ex:Weights .
+ex:Image001 a ddta:StoredContent .
+ex:Image002 a ddta:StoredContent .
+ex:Image003 a ddta:StoredContent .
+ex:Weights a ddta:StoredContent .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph O_101aa1fd2d9628["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1IiByeD0iOSIgcnk9IjMiLz48cGF0aCBkPSJNMyA1djE0YzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTNWNSIvPjxwYXRoIGQ9Ik0zIDEyYzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTMiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>MainStore</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>"]
+    subgraph O_45ef855ddc9a82["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1IiByeD0iOSIgcnk9IjMiLz48cGF0aCBkPSJNMyA1djE0YzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTNWNSIvPjxwYXRoIGQ9Ik0zIDEyYzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTMiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>MainStore</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>"]
         direction TB
-        subgraph O_9305fd051214ab["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1IiByeD0iOSIgcnk9IjMiLz48cGF0aCBkPSJNMyA1djE0YzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTNWNSIvPjxwYXRoIGQ9Ik0zIDEyYzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTMiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>ImagesStore</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>"]
+        subgraph O_f52aac355b1987["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1IiByeD0iOSIgcnk9IjMiLz48cGF0aCBkPSJNMyA1djE0YzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTNWNSIvPjxwYXRoIGQ9Ik0zIDEyYzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTMiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>ImagesStore</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>"]
             direction TB
-            O_dfd3147c262772["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#94A3B8'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#94A3B8'>Image001</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#94A3B8'>ddta:StoredContent</span></div>"]
-            O_b1456e00a9de16["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#94A3B8'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#94A3B8'>Image002</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#94A3B8'>ddta:StoredContent</span></div>"]
-            O_ec3bd9d85f24dc["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#94A3B8'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#94A3B8'>Image003</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#94A3B8'>ddta:StoredContent</span></div>"]
+            O_50b25831449090["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#94A3B8'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#94A3B8'>Image001</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#94A3B8'>ddta:StoredContent</span></div>"]
+            O_11a3cbf44b3980["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#94A3B8'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#94A3B8'>Image002</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#94A3B8'>ddta:StoredContent</span></div>"]
+            O_8350a023863f25["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#94A3B8'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#94A3B8'>Image003</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#94A3B8'>ddta:StoredContent</span></div>"]
         end
-        subgraph O_b4b079d4236769["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1IiByeD0iOSIgcnk9IjMiLz48cGF0aCBkPSJNMyA1djE0YzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTNWNSIvPjxwYXRoIGQ9Ik0zIDEyYzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTMiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>ModelsStore</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>"]
+        subgraph O_5b1861444d1b4e["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM0NTg0NUIiIHN0cm9rZS13aWR0aD0iMS43NSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48ZWxsaXBzZSBjeD0iMTIiIGN5PSI1IiByeD0iOSIgcnk9IjMiLz48cGF0aCBkPSJNMyA1djE0YzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTNWNSIvPjxwYXRoIGQ9Ik0zIDEyYzAgMS42NiA0LjAzIDMgOSAzczktMS4zNCA5LTMiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>ModelsStore</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>"]
             direction TB
-            O_108b7be49c7d6b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#94A3B8'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#94A3B8'>Weights</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#94A3B8'>ddta:StoredContent</span></div>"]
+            O_35b41f326d6b91["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#94A3B8'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#94A3B8'>Weights</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#94A3B8'>ddta:StoredContent</span></div>"]
         end
     end
-    style O_dfd3147c262772 fill:#F1F5F9,stroke:#94A3B8,color:#94A3B8,stroke-width:1.0px,stroke-dasharray:5 4,rx:5px,ry:5px
-    style O_b1456e00a9de16 fill:#F1F5F9,stroke:#94A3B8,color:#94A3B8,stroke-width:1.0px,stroke-dasharray:5 4,rx:5px,ry:5px
-    style O_ec3bd9d85f24dc fill:#F1F5F9,stroke:#94A3B8,color:#94A3B8,stroke-width:1.0px,stroke-dasharray:5 4,rx:5px,ry:5px
-    style O_9305fd051214ab fill:#F1F5F9,stroke:#64748B,color:#64748B,stroke-width:1.5px,rx:12px,ry:12px
-    style O_108b7be49c7d6b fill:#F1F5F9,stroke:#94A3B8,color:#94A3B8,stroke-width:1.0px,stroke-dasharray:5 4,rx:5px,ry:5px
-    style O_b4b079d4236769 fill:#F1F5F9,stroke:#64748B,color:#64748B,stroke-width:1.5px,rx:12px,ry:12px
-    style O_101aa1fd2d9628 fill:#F1F5F9,stroke:#64748B,color:#64748B,stroke-width:1.5px,rx:12px,ry:12px
+    classDef DDTA_C_9c53de845317 fill:#F1F5F9,stroke:#64748B,color:#64748B,stroke-width:1.5px,rx:12px,ry:12px
+    class O_45ef855ddc9a82,O_5b1861444d1b4e,O_f52aac355b1987 DDTA_C_9c53de845317
+    classDef DDTA_C_51a0b50eca1f fill:#F1F5F9,stroke:#94A3B8,color:#94A3B8,stroke-width:1.0px,stroke-dasharray:5 4,rx:5px,ry:5px
+    class O_11a3cbf44b3980,O_35b41f326d6b91,O_50b25831449090,O_8350a023863f25 DDTA_C_51a0b50eca1f
 ```
 
 I collegamenti invisibili `~~~` sono **soltanto ausili di layout**: mantengono le intestazioni sopra i contenuti e provano a disporre i sottostore affiancati. Non aggiungono triple RDF né una relazione semantica di precedenza. Il motore di layout di Mermaid può riorganizzare gli elementi: **la disposizione va verificata in VS Code**, senza considerarla una garanzia assoluta. Gli oggetti `StoredContent` appaiono come nodi distinti, non come elenchi puntati. La visualizzazione complessiva di questo esempio deve essere verificata in VS Code prima di considerare collaudata la traduzione automatica.
@@ -912,11 +1073,23 @@ icon:
 
 ### 10.4 Traduzione Mermaid — singolo elemento
 
+<!-- DDTA-EXAMPLE-09 -->
+
+**Turtle sorgente dell’esempio 09 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:Image001 a ddta:StoredContent .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_da49a57d89b50f["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#94A3B8'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#94A3B8'>Image001</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#94A3B8'>ddta:StoredContent</span></div>"]
-    style O_da49a57d89b50f fill:#F1F5F9,stroke:#94A3B8,color:#94A3B8,stroke-width:1.0px,stroke-dasharray:5 4,rx:5px,ry:5px
+    O_86cfed76b63704["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#94A3B8'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#94A3B8'>Image001</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#94A3B8'>ddta:StoredContent</span></div>"]
+    classDef DDTA_C_51a0b50eca1f fill:#F1F5F9,stroke:#94A3B8,color:#94A3B8,stroke-width:1.0px,stroke-dasharray:5 4,rx:5px,ry:5px
+    class O_86cfed76b63704 DDTA_C_51a0b50eca1f
 ```
 
 Lo stesso stile è applicato nel diagramma della scheda `ddta:stores`. In una vista diversa, la query può selezionare uno `StoredContent` anche senza mostrare lo Store: il nodo rimane distinguibile grazie alla propria classe.
@@ -936,7 +1109,7 @@ Il canale è un **rettangolo ad angoli arrotondati**, con **sfondo viola molto c
 
 Il canale è un **blocco autonomo**: non viene sostituito da una freccia etichettata. Può essere collegato da più frecce in ingresso e in uscita, conservando una sola identità grafica nella stessa vista. Per il caso illustrativo con due estremità, si collocano **Sorgente a sinistra**, **Canale al centro** e **Destinazione a destra**; questi sono ruoli esemplificativi e nei grafici reali vengono mostrati i nomi delle risorse interrogate. Anche i blocchi delle estremità riportano il loro tipo `ddta:`.
 
-La relazione `hasSource` appare come una **freccia entrante nel canale** dalla Resource sorgente, etichettata **INPUT**. La relazione `hasDestination` appare come una **freccia uscente dal canale** verso la Resource destinazione, etichettata **OUTPUT**. Le etichette sono convenzioni **grafiche per le estremità del canale**, non i contratti funzionali `hasInputContract` e `hasOutputContract`: non si deduce l'esistenza di dati scambiati né di un evento di comunicazione. Il verso grafico di INPUT inverte l'orientamento soggetto→oggetto della tripla `Channel hasSource Resource`, senza invertirne il significato.
+La relazione `hasSource` appare come una **freccia entrante nel canale** dalla Resource sorgente, con la scritta **INPUT in un nodo grafico intermedio a stadio viola chiaro**. La relazione `hasDestination` appare come una **freccia uscente dal canale** verso la Resource destinazione, con la scritta **OUTPUT in uno stadio viola chiaro**. Gli stadi hanno fondo `#F0EBFA`, bordo `#8870B5` e testo `#8870B5`; sono etichette di presentazione, non nuovi individui RDF. Le etichette sono convenzioni **grafiche per le estremità del canale**, non i contratti funzionali `hasInputContract` e `hasOutputContract`: non si deduce l'esistenza di dati scambiati né di un evento di comunicazione. Il verso grafico di INPUT inverte l'orientamento soggetto→oggetto della tripla `Channel hasSource Resource`, senza invertirne il significato.
 
 **Canale composto:** nelle viste in cui una distinta regola di proiezione definisce elementi interni al canale, il canale può diventare un `subgraph` Mermaid mantenendo **gli stessi colori e angoli arrotondati**. La presente scheda non introduce autonomamente relazioni di composizione interna.
 
@@ -994,6 +1167,13 @@ line:
   strokePattern: solid
 label:
   text: INPUT
+  representation: rounded-inline-node
+  shape: rounded
+  fill: "#F0EBFA"
+  stroke: "#8870B5"
+  color: "#8870B5"
+  strokeWidth: 1.5
+  cornerRadius: 12
   placement: on-edge
 projection:
   invertRdfSubjectObjectForVisualFlow: true
@@ -1017,6 +1197,13 @@ line:
   strokePattern: solid
 label:
   text: OUTPUT
+  representation: rounded-inline-node
+  shape: rounded
+  fill: "#F0EBFA"
+  stroke: "#8870B5"
+  color: "#8870B5"
+  strokeWidth: 1.5
+  cornerRadius: 12
   placement: on-edge
 projection:
   invertRdfSubjectObjectForVisualFlow: false
@@ -1025,21 +1212,39 @@ projection:
 
 ### 11.4 Traduzione Mermaid — canale fra sorgente e destinazione
 
-La posizione centrale e i segmenti delle frecce sono una **proiezione grafica** delle estremità selezionate con `hasSource` e `hasDestination`; non costituiscono una nuova relazione RDF `Sorgente → Canale` o `Canale → Destinazione`. I nomi sono illustrativi. In una vista con molte comunicazioni, lo stesso nodo del canale può essere riutilizzato da più collegamenti.
+La posizione centrale, gli stadi viola INPUT/OUTPUT e i segmenti delle frecce sono una **proiezione grafica** delle estremità selezionate con `hasSource` e `hasDestination`; non costituiscono nuovi individui RDF né una nuova relazione RDF `Sorgente → Canale` o `Canale → Destinazione`. I nomi sono illustrativi. In una vista con molte comunicazioni, lo stesso nodo del canale può essere riutilizzato da più collegamenti.
+
+<!-- DDTA-EXAMPLE-10 -->
+
+**Turtle sorgente dell’esempio 10 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ClinicalCommunicationChannel a ddta:CommunicationChannel ;
+    ddta:hasSource ex:Sorgente ;
+    ddta:hasDestination ex:Destinazione .
+ex:Sorgente a ddta:Resource .
+ex:Destinazione a ddta:Resource .
+```
 
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_7c5623e9041751("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalCommunicationChannel</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
-    O_e9b0ddeaec7817["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#111827'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#111827'>Destinazione</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#111827'>ddta:Resource</span></div>"]
-    O_95d597b18ddf1d["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#111827'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#111827'>Sorgente</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#111827'>ddta:Resource</span></div>"]
-    O_7c5623e9041751 -->|OUTPUT| O_e9b0ddeaec7817
-    O_95d597b18ddf1d -->|INPUT| O_7c5623e9041751
-    style O_7c5623e9041751 fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
-    style O_e9b0ddeaec7817 fill:#FFFFFF,stroke:#111827,color:#111827,stroke-width:1.5px
-    style O_95d597b18ddf1d fill:#FFFFFF,stroke:#111827,color:#111827,stroke-width:1.5px
-    linkStyle 0 stroke:#8870B5,stroke-width:1.5px
-    linkStyle 1 stroke:#8870B5,stroke-width:1.5px
+    O_1d96dcbe185004("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalCommunicationChannel</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
+    O_ce7c1660e2cb52["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#111827'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#111827'>Destinazione</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#111827'>ddta:Resource</span></div>"]
+    O_8fdd0056d49a9b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#111827'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#111827'>Sorgente</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#111827'>ddta:Resource</span></div>"]
+    G_01e85d9bdfeac1(["OUTPUT"])
+    O_1d96dcbe185004 --- G_01e85d9bdfeac1 --> O_ce7c1660e2cb52
+    G_9e606b88c93dec(["INPUT"])
+    O_8fdd0056d49a9b --- G_9e606b88c93dec --> O_1d96dcbe185004
+    classDef DDTA_C_1ae4e3c918ad fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
+    class G_01e85d9bdfeac1,G_9e606b88c93dec,O_1d96dcbe185004 DDTA_C_1ae4e3c918ad
+    classDef DDTA_C_069d7d57acd8 fill:#FFFFFF,stroke:#111827,color:#111827,stroke-width:1.5px
+    class O_8fdd0056d49a9b,O_ce7c1660e2cb52 DDTA_C_069d7d57acd8
+    linkStyle 0,1 stroke:#8870B5,stroke-width:1.5px
+    linkStyle 2,3 stroke:#8870B5,stroke-width:1.5px
 ```
 
 La traduzione deve essere coerente con la scheda `Environment`: quando un canale compare nel sottogruppo **Communication Channels**, il suo nodo mantiene **il viola pastello e gli angoli arrotondati**, mentre **il contenitore grafico del gruppo** rimane verde con bordo tratteggiato e icona di rete verde in basso.
@@ -1099,11 +1304,23 @@ container:
 
 ### 12.4 Traduzione Mermaid — funzione di comunicazione
 
+<!-- DDTA-EXAMPLE-11 -->
+
+**Turtle sorgente dell’esempio 11 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ClinicalResultCommunication a ddta:CommunicationFunction .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_4d2fae64b52649("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalResultCommunication</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>")
-    style O_4d2fae64b52649 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
+    O_2e262aff734df2("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalResultCommunication</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>")
+    classDef DDTA_C_8f7a37e1c601 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
+    class O_2e262aff734df2 DDTA_C_8f7a37e1c601
 ```
 
 Se sono visibili sottofunzioni **e/o contratti**, il generatore applica al `subgraph` della funzione composta `rx:14px,ry:14px`, come per la scheda generale `Function`, mantenendo però il bordo viola anziché grigio.
@@ -1116,18 +1333,18 @@ Se sono visibili sottofunzioni **e/o contratti**, il generatore applica al `subg
 
 - **Tipo:** Object Property CORE.
 - **IRI:** `ddta:usesChannel`.
-- **Dominio e range:** `ddta:CommunicationFunction` → `ddta:CommunicationChannel`.
-- **Convenzioni visive:** nella vista delle relazioni si rappresenta l'associazione `usesChannel` con etichetta arrotondata; nella vista di flusso funzionale, alle condizioni della §13.5, la stessa associazione concorre a determinare le frecce `OUTPUT` e `INPUT`.
+- **Dominio e range:** `ddta:Function` → `ddta:CommunicationChannel`.
+- **Convenzioni visive:** `usesChannel` esprime la sola associazione, senza direzione di flusso. Le nuove sottoproprietà `usesChannelForInput` e `usesChannelForOutput` determinano le frecce `INPUT` e `OUTPUT` della §13.5.
 
 ### 13.2 Rappresentazione concordata
 
 **Vista delle relazioni (proiezione dell'associazione):** la relazione `usesChannel` appare come una **freccia orientata dalla funzione di comunicazione verso il canale**, con **linea e punta viola scuro** (`#8870B5`, 2 px). Sulla freccia è posizionata una **piccola etichetta arrotondata** che contiene la scritta `usesChannel`, con **sfondo viola chiaro** (`#F0EBFA`), **bordo viola scuro** (`#8870B5`) e testo `#58447D`.
 
-Mermaid consente di ottenere in modo controllabile questo aspetto mediante un **nodo di etichetta intermedio**. Tale nodo è **esclusivamente grafico**: non è un individuo RDF, non deve essere esportato nelle query e non comporta la creazione di due proprietà. Il legame ontologico rimane la singola tripla `CommunicationFunction ddta:usesChannel CommunicationChannel`.
+Mermaid consente di ottenere in modo controllabile questo aspetto mediante un **nodo di etichetta intermedio**. Tale nodo è **esclusivamente grafico**: non è un individuo RDF, non deve essere esportato nelle query e non comporta la creazione di due proprietà. Il legame ontologico resta la singola tripla `Function ddta:usesChannel CommunicationChannel`.
 
 L'etichetta del collegamento non ha un proprio tipo `ddta:` perché è una rappresentazione della **proprietà**, non un blocco che identifica un individuo. I due nodi RDF di estremità conservano **nome e tipo espliciti**.
 
-**Vista di flusso funzionale:** quando sono soddisfatte le condizioni della §13.5, non si ripete la freccia di associazione `usesChannel` con la sua etichetta: la tripla viene utilizzata per costruire le frecce orientate `OUTPUT` e `INPUT`. Si tratta di due proiezioni alternative della stessa informazione, non di una modifica alla proprietà ontologica.
+**Vista di flusso funzionale:** la sola relazione `usesChannel` non autorizza alcun verso. Sono le dichiarazioni esplicite `usesChannelForOutput` e `usesChannelForInput` a generare, rispettivamente, `OUTPUT` e `INPUT`; in questa vista i loro archi di associazione vengono sostituiti dagli archi funzionali. La mancanza della qualifica viene diagnosticata senza inventare frecce.
 
 ### 13.3 Dichiarazione YAML
 
@@ -1165,44 +1382,111 @@ projection:
 
 `mermaid-intermediate-label-node`, `arrowAtDestination`, `placement` e i campi di `projection` descrivono la traduzione Mermaid della relazione. Le etichette grafiche utilizzano identificativi Mermaid stabili, evitando collisioni quando sono visibili più relazioni `usesChannel` e preservando l’identità delle risorse RDF.
 
+### 13.3.1 Proprietà direzionali — regole YAML
+
+Le sottoproprietà RDF `ddta:usesChannelForInput` e `ddta:usesChannelForOutput` hanno dominio `ddta:Function`, range `ddta:CommunicationChannel` e sono entrambe `rdfs:subPropertyOf ddta:usesChannel`. **Non** si richiede che una Function sia tipizzata come `CommunicationFunction` per utilizzare un canale. La vista associativa mostra il predicato esplicito; la vista funzionale mostra INPUT/OUTPUT. Gli stessi colori e forma della §13.3 vengono dichiarati qui senza costanti cromatiche Python.
+
+```yaml ddta-visualization
+record: relation-style
+module: core
+target: ddta:usesChannelForInput
+representation:
+  type: directed-edge
+  source: subject
+  destination: object
+  drawEdge: true
+  renderer: mermaid-intermediate-label-node
+  arrowAtDestination: true
+line:
+  stroke: "#8870B5"
+  strokeWidth: 2
+  strokePattern: solid
+label:
+  text: usesChannelForInput
+  shape: rounded
+  fill: "#F0EBFA"
+  stroke: "#8870B5"
+  color: "#8870B5"
+  strokeWidth: 1.5
+  placement: on-edge
+projection:
+  intermediateNodeIsPresentationOnly: true
+  preserveSingleRdfTriple: true
+```
+
+```yaml ddta-visualization
+record: relation-style
+module: core
+target: ddta:usesChannelForOutput
+representation:
+  type: directed-edge
+  source: subject
+  destination: object
+  drawEdge: true
+  renderer: mermaid-intermediate-label-node
+  arrowAtDestination: true
+line:
+  stroke: "#8870B5"
+  strokeWidth: 2
+  strokePattern: solid
+label:
+  text: usesChannelForOutput
+  shape: rounded
+  fill: "#F0EBFA"
+  stroke: "#8870B5"
+  color: "#8870B5"
+  strokeWidth: 1.5
+  placement: on-edge
+projection:
+  intermediateNodeIsPresentationOnly: true
+  preserveSingleRdfTriple: true
+```
+
 ### 13.4 Traduzione Mermaid
 
 L’esempio rappresenta: funzione bianca con bordo viola, etichetta `usesChannel` viola chiaro sul collegamento e canale viola pastello.
 
+<!-- DDTA-EXAMPLE-12 -->
+
+**Turtle sorgente dell’esempio 12 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ClinicalResultCommunication a ddta:CommunicationFunction ;
+    ddta:usesChannel ex:ClinicalChannel .
+ex:ClinicalChannel a ddta:CommunicationChannel .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_6dfa289eadf04b("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalChannel</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
-    O_4d2fae64b52649("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalResultCommunication</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>")
-    G_ac5715962e556e(["usesChannel"])
-    O_4d2fae64b52649 --- G_ac5715962e556e --> O_6dfa289eadf04b
-    style O_6dfa289eadf04b fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
-    style O_4d2fae64b52649 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
-    style G_ac5715962e556e fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px
+    O_b341e52fdcba17("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalChannel</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
+    O_2e262aff734df2("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalResultCommunication</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>")
+    G_16748a95596788(["usesChannel"])
+    O_2e262aff734df2 --- G_16748a95596788 --> O_b341e52fdcba17
+    classDef DDTA_C_7a452e043c60 fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px
+    class G_16748a95596788 DDTA_C_7a452e043c60
+    classDef DDTA_C_1ae4e3c918ad fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
+    class O_b341e52fdcba17 DDTA_C_1ae4e3c918ad
+    classDef DDTA_C_8f7a37e1c601 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
+    class O_2e262aff734df2 DDTA_C_8f7a37e1c601
     linkStyle 0,1 stroke:#8870B5,stroke-width:2px
 ```
 
 In questa traduzione `F --- REL --> C` corrisponde a **un'unica relazione `usesChannel`**. Il nodo `REL` e i due segmenti di linea appartengono soltanto alla vista Mermaid. Per altre relazioni, il generatore utilizzerà lo stile previsto dalla rispettiva scheda; **il colore viola del collegamento è specifico di `usesChannel`**.
 
 
-### 13.5 Proiezione funzionale deterministica — `OUTPUT → Channel → INPUT`
+### 13.5 Proiezione funzionale deterministica — direzione dichiarata
 
-Questa regola si applica **solo alle viste di flusso funzionale** e al caso in cui ciascuna `CommunicationFunction` associata al canale svolga **un solo ruolo comunicativo**, di invio oppure di ricezione, e abbia **un solo contratto pertinente** per tale comunicazione.
+Questa regola si applica alle **viste di flusso funzionale**. Per ogni tripla RDF `Function ddta:usesChannelForOutput Channel` il renderer disegna **Function → OUTPUT → Channel**; per ogni tripla `Function ddta:usesChannelForInput Channel` disegna **Channel → INPUT → Function**. Non interpreta i nomi degli individui né deduce i versi da `hasInputContract` o `hasOutputContract`. I due versi possono essere dichiarati sulla stessa funzione e sullo stesso canale, oppure su canali diversi.
 
-Il generatore identifica le funzioni associate a uno stesso `CommunicationChannel` mediante `ddta:usesChannel`. Per ricavare i due versi deve trovare **la stessa istanza RDF di `Contract` (stesso IRI)** collegata come:
-- `ddta:hasOutputContract` alla funzione mittente;
-- `ddta:hasInputContract` alla funzione destinataria.
+I contratti continuano a essere dichiarati con `hasInputContract` e `hasOutputContract`, ma il loro accoppiamento con un particolare canale resta fuori dal livello di dettaglio CORE attuale. Un contratto condiviso non è una prova di trasmissione, e un output senza `usesChannelForOutput` **non** viene associato ad alcun canale nella vista. L'assenza della dichiarazione non equivale a negare l'esistenza del canale (Open World Assumption).
 
-Quando questa corrispondenza è unica e i ruoli non sono ambigui, il generatore rappresenta:
+`usesChannel` generico resta valido per la sola associazione e appare nella vista associativa; se viene usato senza alcuna qualifica direzionale, la vista funzionale produce il diagnostico `COMMUNICATION_CHANNEL_ROLE_UNSPECIFIED` e non disegna frecce. Anche se non sono presenti contratti, le dichiarazioni direzionali determinano le frecce: la direzione viene dal Turtle, non dalle proprietà di contratto.
 
-- **mittente → canale**, freccia orientata con etichetta **OUTPUT**;
-- **canale → destinatario**, freccia orientata con etichetta **INPUT**.
-
-Il generatore mantiene **un solo nodo per ciascuna funzione e per il canale** anche quando più funzioni condividono lo stesso canale. Non disegna in aggiunta le frecce `usesChannel` nella medesima vista funzionale: la loro informazione è già utilizzata per determinare gli archi. Se mancano i contratti condivisi, una funzione ha entrambi i ruoli oppure i contratti non permettono un'associazione univoca, il generatore **segnala che la proiezione non è determinabile**, senza inventare frecce.
-
-Le etichette funzionali **OUTPUT**/**INPUT** di questa scheda esprimono il ruolo della funzione rispetto al canale. Sono distinte dalle etichette delle estremità `Resource` definite nella §11 (`hasSource`: `Resource → Channel`, etichetta INPUT; `hasDestination`: `Channel → Resource`, etichetta OUTPUT). Queste due viste **non devono essere confuse**. Le proprietà delle estremità rimangono invariate e non autorizzano, da sole, a identificare una `CommunicationFunction` con una `Resource`.
-
-La proiezione mostra **la comunicazione prevista**, non un trasferimento effettivamente avvenuto. Il contratto condiviso non viene duplicato come nuovo individuo RDF: l'eventuale resa dei contratti nel dettaglio segue le §15–18 e la regola sulle identità condivise.
+Le etichette `OUTPUT` e `INPUT` sono nodi grafici intermedi arrotondati, **non** individui RDF. Palette e geometria derivano esclusivamente dal blocco YAML sottostante. Si mantengono un solo individuo RDF per ciascuna funzione e canale e le normali regole di occorrenza grafica in più contenitori.
 
 #### 13.5.1 Dichiarazione YAML
 
@@ -1210,81 +1494,106 @@ La proiezione mostra **la comunicazione prevista**, non un trasferimento effetti
 record: projection-rule
 module: core
 target: ddta:CommunicationChannel
-id: communication-functional-flow-single-role
-
+id: communication-functional-flow-directional
 view: communication-functional-flow
 inputs:
   association: ddta:usesChannel
-  senderContract: ddta:hasOutputContract
-  receiverContract: ddta:hasInputContract
+  functionClass: ddta:Function
+  outputAssociation: ddta:usesChannelForOutput
+  inputAssociation: ddta:usesChannelForInput
 conditions:
-  sameChannelIndividual: true
-  sameContractIndividual: true
-  matchContractBy: rdf-identity
-  oneRolePerFunctionPerChannel: true
-  oneRelevantContractPerFunction: true
-
+  directionFromExplicitPropertyOnly: true
+  allowBothRolesPerFunctionPerChannel: true
+  requireContractMatch: false
 render:
   outputEdge:
-    from: sending-function
-    to: shared-channel
+    from: function
+    to: declared-channel
     label: OUTPUT
     direction: forward
   inputEdge:
-    from: shared-channel
-    to: receiving-function
+    from: declared-channel
+    to: function
     label: INPUT
     direction: forward
   line:
     stroke: "#8870B5"
     strokeWidth: 2
     strokePattern: solid
-  suppressAssociationEdgeInThisView: ddta:usesChannel
+  labelStyle:
+    representation: rounded-inline-node
+    shape: rounded
+    fill: "#F0EBFA"
+    stroke: "#8870B5"
+    color: "#8870B5"
+    strokeWidth: 1.5
+    cornerRadius: 12
+  suppressAssociationEdgeInThisView:
+    - ddta:usesChannel
+    - ddta:usesChannelForInput
+    - ddta:usesChannelForOutput
   preserveRdfIndividualIdentity: true
 validation:
-  ambiguousRoles: report-not-renderable
-  missingContractMatch: report-not-renderable
-  multipleContractMatches: report-not-renderable
+  unqualifiedAssociation: warn-without-direction
 ```
-
-Questa dichiarazione definisce la proiezione del flusso funzionale quando le condizioni indicate nello YAML sono soddisfatte. Le comunicazioni multiple con ruoli diversi per la stessa funzione richiedono una regola distinta, non deducibile automaticamente da questa scheda.
 
 #### 13.5.2 Esempio minimo di proiezione
 
-In questo esempio `SendUsernameAndPassword` e `CheckUsernameAndPassword` dichiarano entrambe `usesChannel` verso `CredentialCheckChannel`. La prima dichiara `hasOutputContract CredentialContract`; la seconda dichiara `hasInputContract CredentialContract`. **`CredentialContract` è un unico individuo RDF.**
+In questo esempio `SendUsernameAndPassword` dichiara `usesChannelForOutput` e `CheckUsernameAndPassword` dichiara `usesChannelForInput` verso `CredentialCheckChannel`. **`CredentialContract` è un unico individuo RDF**, ma la direzione non deriva dall'identità condivisa del contratto.
 
-```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
-flowchart TB
-    subgraph O_884a1fc0ca2f79["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>CheckUsernameAndPassword</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>"]
-        direction TB
-        subgraph G_d5d1482375129e["Contracts"]
-            direction LR
-            O_451f5c7223a5a0("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>CredentialContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>INPUT</span>")
-        end
-    end
-    O_8412d54e99d915("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>CredentialCheckChannel</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
-    subgraph O_35dbcda08732ab["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>SendUsernameAndPassword</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>"]
-        direction TB
-        subgraph G_b0bcf32e53b87f["Contracts"]
-            direction LR
-            O_799b1c73284d39("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>CredentialContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>OUTPUT</span>")
-        end
-    end
-    O_8412d54e99d915 -->|INPUT| O_884a1fc0ca2f79
-    O_35dbcda08732ab -->|OUTPUT| O_8412d54e99d915
-    style O_451f5c7223a5a0 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_d5d1482375129e fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_884a1fc0ca2f79 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
-    style O_8412d54e99d915 fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
-    style O_799b1c73284d39 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_b0bcf32e53b87f fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_35dbcda08732ab fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
-    linkStyle 0 stroke:#8870B5,stroke-width:2px
-    linkStyle 1 stroke:#8870B5,stroke-width:2px
+<!-- DDTA-EXAMPLE-13 -->
+
+**Turtle sorgente dell’esempio 13 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/authentication#> .
+
+ex:SendUsernameAndPassword a ddta:CommunicationFunction ;
+    ddta:usesChannelForOutput ex:CredentialCheckChannel ;
+    ddta:hasOutputContract ex:CredentialContract .
+ex:CheckUsernameAndPassword a ddta:CommunicationFunction ;
+    ddta:usesChannelForInput ex:CredentialCheckChannel ;
+    ddta:hasInputContract ex:CredentialContract .
+ex:CredentialCheckChannel a ddta:CommunicationChannel .
+ex:CredentialContract a ddta:Contract .
 ```
 
-Il contratto è omesso **soltanto in questo esempio di sintesi**, non dal modello. La sua composizione grafica è descritta nelle schede dedicate.
+```mermaid
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
+flowchart TB
+    subgraph O_504e9d3f1dcc09["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>CheckUsernameAndPassword</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>"]
+        direction TB
+        subgraph G_251935f0a45dcd["Contracts"]
+            direction LR
+            O_135e6a7473736b("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>CredentialContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · INPUT</span></div>")
+        end
+    end
+    O_d64f861141550f("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>CredentialCheckChannel</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
+    subgraph O_03b66b6e5f09c2["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>SendUsernameAndPassword</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>"]
+        direction TB
+        subgraph G_8189ea9db002e8["Contracts"]
+            direction LR
+            O_b3688dda706807("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>CredentialContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · OUTPUT</span></div>")
+        end
+    end
+    G_6fa855a04236b6(["INPUT"])
+    O_d64f861141550f --- G_6fa855a04236b6 --> O_504e9d3f1dcc09
+    G_adbae8c74decbe(["OUTPUT"])
+    O_03b66b6e5f09c2 --- G_adbae8c74decbe --> O_d64f861141550f
+    classDef DDTA_C_1ae4e3c918ad fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
+    class G_6fa855a04236b6,G_adbae8c74decbe,O_d64f861141550f DDTA_C_1ae4e3c918ad
+    classDef DDTA_C_79f0ec56fa96 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
+    class O_135e6a7473736b,O_b3688dda706807 DDTA_C_79f0ec56fa96
+    classDef DDTA_C_64f33d7120fc fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
+    class G_251935f0a45dcd,G_8189ea9db002e8 DDTA_C_64f33d7120fc
+    classDef DDTA_C_8f7a37e1c601 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
+    class O_03b66b6e5f09c2,O_504e9d3f1dcc09 DDTA_C_8f7a37e1c601
+    linkStyle 0,1 stroke:#8870B5,stroke-width:2px
+    linkStyle 2,3 stroke:#8870B5,stroke-width:2px
+```
+
+Il contratto condiviso compare in due contesti grafici, ma mantiene **un solo IRI RDF**. La sua composizione è descritta nelle schede dedicate; le etichette viola sulle frecce sono elementi grafici distinti dai ruoli INPUT/OUTPUT mostrati all’interno dei contratti.
 
 ---
 
@@ -1399,19 +1708,38 @@ validation:
 
 Il `System` è mostrato **all'interno** del confine per la relazione `hasBoundary`; le due risorse sono dentro il confine per effetto di `encloses`. Questi due criteri di inclusione grafica **restano distinti** e non producono nuove triple RDF. L'intestazione con scudo è puramente grafica.
 
+<!-- DDTA-EXAMPLE-14 -->
+
+**Turtle sorgente dell’esempio 14 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ClinicalSystem a ddta:System ; ddta:hasBoundary ex:ClinicalDataBoundary .
+ex:ClinicalDataBoundary a ddta:Boundary ;
+    ddta:encloses ex:ClinicalChannel, ex:ClinicalImagesStore .
+ex:ClinicalChannel a ddta:CommunicationChannel .
+ex:ClinicalImagesStore a ddta:Store .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph O_6ef45369ebb4ec["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNCODVDNUMiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xNCAyLjggMjMgNnY3LjdjMCA1LjUtNC4xIDkuNS05IDExLjUtNC45LTItOS02LTktMTEuNVY2bDktMy4yWiIvPjxwYXRoIGQ9Ik0xMCAxNGg4TTE0IDEwdjgiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#B85C5C'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#B85C5C'>ClinicalDataBoundary</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#B85C5C'>ddta:Boundary</span></div>"]
+    subgraph O_22415bdaa2d212["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNCODVDNUMiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xNCAyLjggMjMgNnY3LjdjMCA1LjUtNC4xIDkuNS05IDExLjUtNC45LTItOS02LTktMTEuNVY2bDktMy4yWiIvPjxwYXRoIGQ9Ik0xMCAxNGg4TTE0IDEwdjgiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#B85C5C'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#B85C5C'>ClinicalDataBoundary</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#B85C5C'>ddta:Boundary</span></div>"]
         direction TB
-        O_a8f787829600bd["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#2563EB'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#2563EB'>ClinicalSystem</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#2563EB'>ddta:System</span></div>"]
-        O_9c644cca230c43("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalChannel</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
-        O_9ee88fa4973cdc("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>ClinicalImagesStore</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>")
+        O_6bd99a855eaa5a["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#2563EB'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#2563EB'>ClinicalSystem</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#2563EB'>ddta:System</span></div>"]
+        O_62eaa624265006("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalChannel</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
+        O_c9a6dd61271c2b("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#64748B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#64748B'>ClinicalImagesStore</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#64748B'>ddta:Store</span></div>")
     end
-    style O_a8f787829600bd fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
-    style O_9c644cca230c43 fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
-    style O_9ee88fa4973cdc fill:#F1F5F9,stroke:#64748B,color:#64748B,stroke-width:1.5px
-    style O_6ef45369ebb4ec fill:#FFFFFF,stroke:#B85C5C,color:#B85C5C,stroke-width:2px,stroke-dasharray:5 4,rx:12px,ry:12px
+    classDef DDTA_C_ec3c1934ce4a fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
+    class O_6bd99a855eaa5a DDTA_C_ec3c1934ce4a
+    classDef DDTA_C_1ae4e3c918ad fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
+    class O_62eaa624265006 DDTA_C_1ae4e3c918ad
+    classDef DDTA_C_2c6e0269ee60 fill:#F1F5F9,stroke:#64748B,color:#64748B,stroke-width:1.5px
+    class O_c9a6dd61271c2b DDTA_C_2c6e0269ee60
+    classDef DDTA_C_14ee534bd087 fill:#FFFFFF,stroke:#B85C5C,color:#B85C5C,stroke-width:2px,stroke-dasharray:5 4,rx:12px,ry:12px
+    class O_22415bdaa2d212 DDTA_C_14ee534bd087
 ```
 
 I collegamenti `~~~` servono unicamente a disporre i blocchi interni. In caso di Boundary multipli o intersecanti occorre una strategia grafica esplicita; non è prevista una gerarchia implicita di confini.
@@ -1479,11 +1807,23 @@ container:
 
 ### 15.4 Traduzione Mermaid — contratto isolato
 
+<!-- DDTA-EXAMPLE-15 -->
+
+**Turtle sorgente dell’esempio 15 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ImageInputContract a ddta:Contract .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_23e44bfec5d2d1("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>ImageInputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div>")
-    style O_23e44bfec5d2d1 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
+    O_a9cf9a2d0b3ac6("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>ImageInputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div>")
+    classDef DDTA_C_79f0ec56fa96 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
+    class O_a9cf9a2d0b3ac6 DDTA_C_79f0ec56fa96
 ```
 
 Nella vista composta il medesimo individuo è rappresentato con `subgraph` anziché con un nodo aggiuntivo: nome e tipo compaiono nell'intestazione; l'icona è posizionata accanto, e non tra gli elementi contrattuali.
@@ -1555,13 +1895,30 @@ conditionalStyles:
 
 ### 16.4 Traduzione Mermaid — due elementi
 
+<!-- DDTA-EXAMPLE-16 -->
+
+**Turtle sorgente dell’esempio 16 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+ex:CroppingRegion a ddta:ContractElement ;
+    ddta:minOccurs 0 ; ddta:maxOccurs 1 .
+ex:LesionImage a ddta:ContractElement ;
+    ddta:minOccurs 1 ; ddta:maxOccurs 1 .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_1724515b57d497("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>CroppingRegion</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>0..1</span>")
-    O_be4e84069ff4d4("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>LesionImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
-    style O_1724515b57d497 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,stroke-dasharray:5 4,rx:7px,ry:7px
-    style O_be4e84069ff4d4 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
+    O_225d6b600bd69c("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>CroppingRegion</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>0..1</span></div>")
+    O_c71b081eab9a7d("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>LesionImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
+    classDef DDTA_C_963300b37fb7 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
+    class O_c71b081eab9a7d DDTA_C_963300b37fb7
+    classDef DDTA_C_81f47a4bec6f fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,stroke-dasharray:5 4,rx:7px,ry:7px
+    class O_225d6b600bd69c DDTA_C_81f47a4bec6f
 ```
 
 Qui `~~~` non è la relazione `hasContractElement`: è soltanto un vincolo di impaginazione.
@@ -1606,17 +1963,34 @@ validation:
 
 ### 17.4 Traduzione Mermaid — contratto con elementi
 
+<!-- DDTA-EXAMPLE-17 -->
+
+**Turtle sorgente dell’esempio 17 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ImageInputContract a ddta:Contract ;
+    ddta:hasContractElement ex:CroppingRegion, ex:LesionImage .
+ex:CroppingRegion a ddta:ContractElement ; ddta:minOccurs 0 ; ddta:maxOccurs 1 .
+ex:LesionImage a ddta:ContractElement ; ddta:minOccurs 1 ; ddta:maxOccurs 1 .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph O_23e44bfec5d2d1["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>ImageInputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div>"]
+    subgraph O_a9cf9a2d0b3ac6["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>ImageInputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div>"]
         direction TB
-        O_4abedcbecce744("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>CroppingRegion</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>0..1</span>")
-        O_ccb131edcd8ea2("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>LesionImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+        O_8e13fa9fa77988("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>CroppingRegion</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>0..1</span></div>")
+        O_3c5fef21889635("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>LesionImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
     end
-    style O_4abedcbecce744 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,stroke-dasharray:5 4,rx:7px,ry:7px
-    style O_ccb131edcd8ea2 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_23e44bfec5d2d1 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
+    classDef DDTA_C_79f0ec56fa96 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
+    class O_a9cf9a2d0b3ac6 DDTA_C_79f0ec56fa96
+    classDef DDTA_C_963300b37fb7 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
+    class O_3c5fef21889635 DDTA_C_963300b37fb7
+    classDef DDTA_C_81f47a4bec6f fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,stroke-dasharray:5 4,rx:7px,ry:7px
+    class O_8e13fa9fa77988 DDTA_C_81f47a4bec6f
 ```
 
 ---
@@ -1636,7 +2010,7 @@ Le due relazioni vengono rappresentate come **contenimento grafico** del `Contra
 
 `Function`, `CommunicationFunction`, `Contract` e `ContractElement` applicano esclusivamente i propri stili di classe (schede 3, 12, 15 e 16). Questa scheda specifica i **ruoli INPUT/OUTPUT e i gruppi di contenimento**, non i colori o le forme dei singoli elementi. Quando la stessa funzione ha anche sottofunzioni visibili, due **gruppi di layout distinti** (`Contracts`, `Subfunctions`) tengono leggibili entrambe le parti, senza duplicare la funzione. Il gruppo **Contracts** usa sfondo giallo chiaro `#FFF8DE` e bordo **continuo** giallo scuro `#C6A34D`, non un bordo grigio tratteggiato; il gruppo **Subfunctions** rimane invariato. Entrambi i gruppi sono elementi di layout, non istanze RDF.
 
-Questa regola riguarda **tutte** le `Function`: la visibilità di `usesChannel` è una scelta di vista indipendente, specifica di `CommunicationFunction`.
+Questa regola riguarda **tutte** le `Function`: anche una funzione non specializzata come `CommunicationFunction` può associare canali INPUT/OUTPUT mediante le sottoproprietà direzionali di `usesChannel`.
 
 ### 18.3 Dichiarazione YAML
 
@@ -1695,65 +2069,109 @@ validation:
 
 L'esempio seguente riunisce **entrambe le tipologie di contenimento** nella stessa `Function`, senza frecce contrattuali e senza frecce di decomposizione. I due gruppi `Contracts` e `Subfunctions` sono **solo impaginazione**; non rappresentano istanze RDF. Tutti i blocchi ontologici mostrano il tipo `ddta:`.
 
+<!-- DDTA-EXAMPLE-18 -->
+
+**Turtle sorgente dell’esempio 18 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ImagePreparation a ddta:Function ;
+    ddta:hasInputContract ex:InputContract ;
+    ddta:hasOutputContract ex:OutputContract ;
+    ddta:hasSubFunction ex:ImageNormalization, ex:ImageValidation .
+ex:ImageNormalization a ddta:Function .
+ex:ImageValidation a ddta:Function .
+ex:InputContract a ddta:Contract ; ddta:hasContractElement ex:Image, ex:CropRegion .
+ex:OutputContract a ddta:Contract ; ddta:hasContractElement ex:PreparedImage .
+ex:Image a ddta:ContractElement ; ddta:minOccurs 1 ; ddta:maxOccurs 1 .
+ex:CropRegion a ddta:ContractElement ; ddta:minOccurs 0 ; ddta:maxOccurs 1 .
+ex:PreparedImage a ddta:ContractElement ; ddta:minOccurs 1 ; ddta:maxOccurs 1 .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph O_79c80f6b271f28["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImagePreparation</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
+    subgraph O_c280010220776d["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImagePreparation</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
         direction TB
-        subgraph G_e49d9b8f7e0a5d["Contracts"]
+        subgraph G_a845b75e6e279c["Contracts"]
             direction LR
-            subgraph O_66160229118033["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>InputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>INPUT</span>"]
+            subgraph O_c4829a5b2852b1["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>InputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · INPUT</span></div>"]
                 direction TB
-                O_b3ddfd4f1a5901("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>CropRegion</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>0..1</span>")
-                O_3782eb28973723("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Image</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                O_a300572b2ac34d("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>CropRegion</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>0..1</span></div>")
+                O_f36e6d9f89763d("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Image</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
             end
-            subgraph O_71a77e3bb86683["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>OutputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>OUTPUT</span>"]
+            subgraph O_2acbf5a8d603db["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>OutputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · OUTPUT</span></div>"]
                 direction TB
-                O_2caa8086c95b07("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>PreparedImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                O_be70080e4e29b9("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>PreparedImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
             end
         end
-        subgraph G_accddc2b83e32c["Subfunctions"]
+        subgraph G_0fed4b61bf9bde["Subfunctions"]
             direction TB
-            O_358fa56dfac357("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImageNormalization</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
-            O_70ab0f9135da3b("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImageValidation</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+            O_c9fc1acf8e6578("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImageNormalization</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+            O_36b3ed9d75b50d("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImageValidation</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
         end
     end
-    style O_b3ddfd4f1a5901 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,stroke-dasharray:5 4,rx:7px,ry:7px
-    style O_3782eb28973723 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_66160229118033 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style O_2caa8086c95b07 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_71a77e3bb86683 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_e49d9b8f7e0a5d fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_358fa56dfac357 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_70ab0f9135da3b fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style G_accddc2b83e32c fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_79c80f6b271f28 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
+    classDef DDTA_C_79f0ec56fa96 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
+    class O_2acbf5a8d603db,O_c4829a5b2852b1 DDTA_C_79f0ec56fa96
+    classDef DDTA_C_64f33d7120fc fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
+    class G_a845b75e6e279c DDTA_C_64f33d7120fc
+    classDef DDTA_C_963300b37fb7 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
+    class O_be70080e4e29b9,O_f36e6d9f89763d DDTA_C_963300b37fb7
+    classDef DDTA_C_81f47a4bec6f fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,stroke-dasharray:5 4,rx:7px,ry:7px
+    class O_a300572b2ac34d DDTA_C_81f47a4bec6f
+    classDef DDTA_C_1a97e3c85c24 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
+    class G_0fed4b61bf9bde,O_36b3ed9d75b50d,O_c9fc1acf8e6578 DDTA_C_1a97e3c85c24
+    classDef DDTA_C_bfb810e84373 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
+    class O_c280010220776d DDTA_C_bfb810e84373
 ```
 
 ### 18.5 Traduzione Mermaid — CommunicationFunction con contratti e `usesChannel`
 
-Anche la funzione di comunicazione contiene i contratti. **Questo esempio mostra la vista dell'associazione**, nella quale `usesChannel` rimane una freccia viola con etichetta arrotondata, come nella §13.4. **Nella vista di flusso funzionale**, quando la §13.5 è applicabile, si usano invece le frecce `OUTPUT` e `INPUT`. La funzione, i contratti e il canale utilizzano i propri stili di classe (schede 12, 15 e 11).
+Anche la funzione di comunicazione contiene i contratti. **Questo esempio mostra la vista dell'associazione**, nella quale `usesChannel` rimane una freccia viola con etichetta arrotondata, come nella §13.4. **Nella vista di flusso funzionale** le frecce `OUTPUT` e `INPUT` si disegnano soltanto quando sono dichiarate rispettivamente `usesChannelForOutput` e `usesChannelForInput`. La funzione, i contratti e il canale utilizzano i propri stili di classe (schede 12, 15 e 11).
+
+<!-- DDTA-EXAMPLE-19 -->
+
+**Turtle sorgente dell’esempio 19 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:SendClinicalResult a ddta:CommunicationFunction ;
+    ddta:hasInputContract ex:InputContract ;
+    ddta:hasOutputContract ex:OutputContract ;
+    ddta:usesChannel ex:ClinicalChannel .
+ex:InputContract a ddta:Contract .
+ex:OutputContract a ddta:Contract .
+ex:ClinicalChannel a ddta:CommunicationChannel .
+```
 
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_6dfa289eadf04b("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalChannel</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
-    subgraph O_b9739e4d37cd75["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>SendClinicalResult</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>"]
+    O_b341e52fdcba17("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>ClinicalChannel</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
+    subgraph O_5cd387d1ff225b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>SendClinicalResult</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationFunction</span></div>"]
         direction TB
-        subgraph G_03b6fd1fad27d6["Contracts"]
+        subgraph G_68b326686487b8["Contracts"]
             direction LR
-            O_d564ddcd0189ee("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>InputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>INPUT</span>")
-            O_9a1167e2a75fea("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>OutputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>OUTPUT</span>")
+            O_8020a403c80250("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>InputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · INPUT</span></div>")
+            O_1a04857dbb88b6("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>OutputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · OUTPUT</span></div>")
         end
     end
-    G_c7910dc307d76d(["usesChannel"])
-    O_b9739e4d37cd75 --- G_c7910dc307d76d --> O_6dfa289eadf04b
-    style O_6dfa289eadf04b fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
-    style O_d564ddcd0189ee fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style O_9a1167e2a75fea fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_03b6fd1fad27d6 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_b9739e4d37cd75 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
-    style G_c7910dc307d76d fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px
+    G_3684d0f892900c(["usesChannel"])
+    O_5cd387d1ff225b --- G_3684d0f892900c --> O_b341e52fdcba17
+    classDef DDTA_C_7a452e043c60 fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px
+    class G_3684d0f892900c DDTA_C_7a452e043c60
+    classDef DDTA_C_1ae4e3c918ad fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
+    class O_b341e52fdcba17 DDTA_C_1ae4e3c918ad
+    classDef DDTA_C_79f0ec56fa96 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
+    class O_1a04857dbb88b6,O_8020a403c80250 DDTA_C_79f0ec56fa96
+    classDef DDTA_C_64f33d7120fc fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
+    class G_68b326686487b8 DDTA_C_64f33d7120fc
+    classDef DDTA_C_8f7a37e1c601 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
+    class O_5cd387d1ff225b DDTA_C_8f7a37e1c601
     linkStyle 0,1 stroke:#8870B5,stroke-width:2px
 ```
 
@@ -1801,11 +2219,23 @@ specializations:
 
 ### 19.4 Traduzione Mermaid
 
+<!-- DDTA-EXAMPLE-20 -->
+
+**Turtle sorgente dell’esempio 20 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ExampleResource a ddta:Resource .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_fed7e7dac08e0b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#111827'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#111827'>ExampleResource</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#111827'>ddta:Resource</span></div>"]
-    style O_fed7e7dac08e0b fill:#FFFFFF,stroke:#111827,color:#111827,stroke-width:1.5px
+    O_34ecebd5d2a20b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#111827'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#111827'>ExampleResource</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#111827'>ddta:Resource</span></div>"]
+    classDef DDTA_C_069d7d57acd8 fill:#FFFFFF,stroke:#111827,color:#111827,stroke-width:1.5px
+    class O_34ecebd5d2a20b DDTA_C_069d7d57acd8
 ```
 
 ---
@@ -1858,24 +2288,39 @@ scope:
 
 Il nodo centrale `MP` rappresenta **soltanto l'etichetta grafica** della relazione. Le due porzioni tratteggiate sono rese con una sola punta di freccia verso la funzione successiva; `MP` non corrisponde a un individuo RDF. La direzione del diagramma non sostituisce l'esistenza di `mustPrecede` nel grafo.
 
+<!-- DDTA-EXAMPLE-21 -->
+
+**Turtle sorgente dell’esempio 21 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ImagePreparation a ddta:Function ;
+    ddta:hasSubFunction ex:ImageValidation, ex:ImageNormalization .
+ex:ImageValidation a ddta:Function ; ddta:mustPrecede ex:ImageNormalization .
+ex:ImageNormalization a ddta:Function .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph O_79c80f6b271f28["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImagePreparation</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
+    subgraph O_c280010220776d["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImagePreparation</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
         direction TB
-        subgraph G_accddc2b83e32c["Subfunctions"]
+        subgraph G_0fed4b61bf9bde["Subfunctions"]
             direction TB
-            O_358fa56dfac357("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImageNormalization</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
-            O_70ab0f9135da3b("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImageValidation</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
-    G_dbec7bca96b63c(["mustPrecede"])
-    O_70ab0f9135da3b --- G_dbec7bca96b63c --> O_358fa56dfac357
+            O_c9fc1acf8e6578("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImageNormalization</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+            O_36b3ed9d75b50d("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImageValidation</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>")
+    G_db1c875aaad508(["mustPrecede"])
+    O_36b3ed9d75b50d --- G_db1c875aaad508 --> O_c9fc1acf8e6578
         end
     end
-    style O_358fa56dfac357 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_70ab0f9135da3b fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style G_dbec7bca96b63c fill:#F3F4F6,stroke:#374151,color:#374151,rx:12px,ry:12px
-    style G_accddc2b83e32c fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_79c80f6b271f28 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
+    classDef DDTA_C_e3db535a2f49 fill:#F3F4F6,stroke:#374151,color:#374151,rx:12px,ry:12px
+    class G_db1c875aaad508 DDTA_C_e3db535a2f49
+    classDef DDTA_C_1a97e3c85c24 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
+    class G_0fed4b61bf9bde,O_36b3ed9d75b50d,O_c9fc1acf8e6578 DDTA_C_1a97e3c85c24
+    classDef DDTA_C_bfb810e84373 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
+    class O_c280010220776d DDTA_C_bfb810e84373
     linkStyle 0,1 stroke:#374151,stroke-width:1.8px,stroke-dasharray:6 4
 ```
 
@@ -1929,25 +2374,40 @@ layout:
 
 ### 21.4 Traduzione Mermaid — Process con Step
 
+<!-- DDTA-EXAMPLE-22 -->
+
+**Turtle sorgente dell’esempio 22 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ImagePreparationProcess a ddta:Process ;
+    ddta:hasStep ex:ReadImage, ex:NormalizeImage, ex:SaveImage .
+ex:ReadImage a ddta:ProcessStep ; ddta:hasNextStep ex:NormalizeImage .
+ex:NormalizeImage a ddta:ProcessStep ; ddta:hasNextStep ex:SaveImage .
+ex:SaveImage a ddta:ProcessStep .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph O_c19983a8cc7be7["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ImagePreparationProcess</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:Process</span></div>"]
+    subgraph O_cfededaf0e4b6b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ImagePreparationProcess</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:Process</span></div>"]
         direction LR
-        O_ebf75c1e71d138["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>NormalizeImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
-        O_c7752719699739["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ReadImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
-        O_019c765331a4ac["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>SaveImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
-    G_6d7081667a2cab(["hasNextStep"])
-    O_ebf75c1e71d138 --- G_6d7081667a2cab --> O_019c765331a4ac
-    G_1a720486553cef(["hasNextStep"])
-    O_c7752719699739 --- G_1a720486553cef --> O_ebf75c1e71d138
+        O_08d5a684b7a373["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>NormalizeImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
+        O_ec610dd6724f02["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ReadImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
+        O_8df8be1f3f7b04["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>SaveImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
+    G_13d59556f18fcb(["hasNextStep"])
+    O_08d5a684b7a373 --- G_13d59556f18fcb --> O_8df8be1f3f7b04
+    G_14bde2aaf46355(["hasNextStep"])
+    O_ec610dd6724f02 --- G_14bde2aaf46355 --> O_08d5a684b7a373
     end
-    style O_ebf75c1e71d138 fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_c7752719699739 fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_019c765331a4ac fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
-    style G_6d7081667a2cab fill:#FFFFFF,stroke:#7B8794,color:#7B8794,rx:12px,ry:12px
-    style G_1a720486553cef fill:#FFFFFF,stroke:#7B8794,color:#7B8794,rx:12px,ry:12px
-    style O_c19983a8cc7be7 fill:#F8FAFC,stroke:#7B8794,color:#7B8794,stroke-width:2px,rx:8px,ry:8px
+    classDef DDTA_C_a6bdc037a9c8 fill:#F8FAFC,stroke:#7B8794,color:#7B8794,stroke-width:2px,rx:8px,ry:8px
+    class O_cfededaf0e4b6b DDTA_C_a6bdc037a9c8
+    classDef DDTA_C_c5903718b18b fill:#FFFFFF,stroke:#7B8794,color:#7B8794,rx:12px,ry:12px
+    class G_13d59556f18fcb,G_14bde2aaf46355 DDTA_C_c5903718b18b
+    classDef DDTA_C_a6141e99742b fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
+    class O_08d5a684b7a373,O_8df8be1f3f7b04,O_ec610dd6724f02 DDTA_C_a6141e99742b
     linkStyle 0,1 stroke:#7B8794,stroke-width:1.5px
     linkStyle 2,3 stroke:#7B8794,stroke-width:1.5px
 ```
@@ -1997,11 +2457,23 @@ placement:
 
 ### 22.4 Traduzione Mermaid — singolo Step
 
+<!-- DDTA-EXAMPLE-23 -->
+
+**Turtle sorgente dell’esempio 23 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ReadImage a ddta:ProcessStep .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    O_ce57672ddd7c03["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ReadImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
-    style O_ce57672ddd7c03 fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
+    O_0528e61fe086d6["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ReadImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
+    classDef DDTA_C_a6141e99742b fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
+    class O_0528e61fe086d6 DDTA_C_a6141e99742b
 ```
 
 ---
@@ -2053,20 +2525,36 @@ scope:
 
 Il nodo `NX` esiste **solo per disegnare l'etichetta**: non è un nuovo Step né un individuo dell'ontologia.
 
+<!-- DDTA-EXAMPLE-24 -->
+
+**Turtle sorgente dell’esempio 24 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ImagePreparationProcess a ddta:Process ;
+    ddta:hasStep ex:ReadImage, ex:NormalizeImage .
+ex:ReadImage a ddta:ProcessStep ; ddta:hasNextStep ex:NormalizeImage .
+ex:NormalizeImage a ddta:ProcessStep .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph O_c19983a8cc7be7["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ImagePreparationProcess</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:Process</span></div>"]
+    subgraph O_cfededaf0e4b6b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ImagePreparationProcess</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:Process</span></div>"]
         direction LR
-        O_ebf75c1e71d138["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>NormalizeImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
-        O_c7752719699739["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ReadImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
-    G_1a720486553cef(["hasNextStep"])
-    O_c7752719699739 --- G_1a720486553cef --> O_ebf75c1e71d138
+        O_08d5a684b7a373["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>NormalizeImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
+        O_ec610dd6724f02["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ReadImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
+    G_14bde2aaf46355(["hasNextStep"])
+    O_ec610dd6724f02 --- G_14bde2aaf46355 --> O_08d5a684b7a373
     end
-    style O_ebf75c1e71d138 fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_c7752719699739 fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
-    style G_1a720486553cef fill:#FFFFFF,stroke:#7B8794,color:#7B8794,rx:12px,ry:12px
-    style O_c19983a8cc7be7 fill:#F8FAFC,stroke:#7B8794,color:#7B8794,stroke-width:2px,rx:8px,ry:8px
+    classDef DDTA_C_a6bdc037a9c8 fill:#F8FAFC,stroke:#7B8794,color:#7B8794,stroke-width:2px,rx:8px,ry:8px
+    class O_cfededaf0e4b6b DDTA_C_a6bdc037a9c8
+    classDef DDTA_C_c5903718b18b fill:#FFFFFF,stroke:#7B8794,color:#7B8794,rx:12px,ry:12px
+    class G_14bde2aaf46355 DDTA_C_c5903718b18b
+    classDef DDTA_C_a6141e99742b fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
+    class O_08d5a684b7a373,O_ec610dd6724f02 DDTA_C_a6141e99742b
     linkStyle 0,1 stroke:#7B8794,stroke-width:1.5px
 ```
 
@@ -2125,52 +2613,75 @@ Questo esempio rappresenta **tutti gli elementi e le relazioni CORE del caso ill
 
 Il simbolo fra i due è una **freccia verso l'alto in formato SVG locale**, collocata al centro e accompagnata dall'etichetta `realizesFunction`. I collegamenti invisibili `~~~` servono solo al layout; **non generano triple RDF e non rappresentano trasferimenti di dati**. Le relazioni tra Step adottano sempre la **forma estesa** di `hasNextStep` (etichetta arrotondata bianca, bordo/testo e freccia grigi), anche in questo esempio integrato. La relazione semantica resta `Process → realizesFunction → Function`. Contratti e Step mantengono i rispettivi contenimenti.
 
+<!-- DDTA-EXAMPLE-25 -->
+
+**Turtle sorgente dell’esempio 25 (dati illustrativi).**
+
+```turtle
+@prefix ddta: <https://w3id.org/ddta/core#> .
+@prefix ex: <https://example.org/ddta/core-visualization#> .
+
+ex:ImagePreparation a ddta:Function ;
+    ddta:hasInputContract ex:ImageInputContract ;
+    ddta:hasOutputContract ex:PreparedImageContract .
+ex:ImageInputContract a ddta:Contract .
+ex:PreparedImageContract a ddta:Contract .
+ex:ImagePreparationProcess a ddta:Process ;
+    ddta:realizesFunction ex:ImagePreparation ;
+    ddta:hasStep ex:ReadImage, ex:NormalizeImage, ex:SaveImage .
+ex:ReadImage a ddta:ProcessStep ; ddta:hasNextStep ex:NormalizeImage .
+ex:NormalizeImage a ddta:ProcessStep ; ddta:hasNextStep ex:SaveImage .
+ex:SaveImage a ddta:ProcessStep .
+```
+
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
-    subgraph G_7b171e108a70ba[" "]
+    subgraph G_9859d06996e5fa[" "]
         direction TB
-        subgraph O_79c80f6b271f28["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImagePreparation</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
+        subgraph O_c280010220776d["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#374151'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#374151'>ImagePreparation</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#374151'>ddta:Function</span></div>"]
             direction TB
-            subgraph G_44f8a2a8c6409b["Contracts"]
+            subgraph G_c61975b1657cb2["Contracts"]
                 direction LR
-                O_8456dcc84b0e57("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>ImageInputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>INPUT</span>")
-                O_1f784fef38c69d("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>PreparedImageContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>OUTPUT</span>")
+                O_cb61daef54b698("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>ImageInputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · INPUT</span></div>")
+                O_b774b0fca9fd2b("<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>PreparedImageContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · OUTPUT</span></div>")
             end
         end
-        subgraph G_a8517ea6b39f62[" "]
+        subgraph G_1b084da4493e52[" "]
             direction TB
-            G_cfee3173b05005@{ img: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDMyIDQ4IiBmaWxsPSJub25lIj48cGF0aCBkPSJNMTYgNDJWMTBNNiAyMCAxNiAxMGwxMCAxMCIgc3Ryb2tlPSIjN0I4Nzk0IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==", h: 42, constraint: "on" }
-            G_01805e62b4b884(["realizesFunction"])
-            G_cfee3173b05005 ~~~ G_01805e62b4b884
+            G_e24c7c9cc80109@{ img: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDMyIDQ4IiBmaWxsPSJub25lIj48cGF0aCBkPSJNMTYgNDJWMTBNNiAyMCAxNiAxMGwxMCAxMCIgc3Ryb2tlPSIjN0I4Nzk0IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==", h: 42, constraint: "on" }
+            G_9bb97e6c4b0f32(["realizesFunction"])
+            G_e24c7c9cc80109 ~~~ G_9bb97e6c4b0f32
         end
-        subgraph O_c19983a8cc7be7["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ImagePreparationProcess</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:Process</span></div>"]
+        subgraph O_cfededaf0e4b6b["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ImagePreparationProcess</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:Process</span></div>"]
             direction LR
-            O_ebf75c1e71d138["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>NormalizeImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
-            O_c7752719699739["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ReadImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
-            O_019c765331a4ac["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>SaveImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
-    G_6d7081667a2cab(["hasNextStep"])
-    O_ebf75c1e71d138 --- G_6d7081667a2cab --> O_019c765331a4ac
-    G_1a720486553cef(["hasNextStep"])
-    O_c7752719699739 --- G_1a720486553cef --> O_ebf75c1e71d138
+            O_08d5a684b7a373["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>NormalizeImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
+            O_ec610dd6724f02["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>ReadImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
+            O_8df8be1f3f7b04["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#7B8794'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#7B8794'>SaveImage</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#7B8794'>ddta:ProcessStep</span></div>"]
+    G_13d59556f18fcb(["hasNextStep"])
+    O_08d5a684b7a373 --- G_13d59556f18fcb --> O_8df8be1f3f7b04
+    G_14bde2aaf46355(["hasNextStep"])
+    O_ec610dd6724f02 --- G_14bde2aaf46355 --> O_08d5a684b7a373
         end
-        O_79c80f6b271f28 ~~~ G_a8517ea6b39f62
-        G_a8517ea6b39f62 ~~~ O_c19983a8cc7be7
+        O_c280010220776d ~~~ G_1b084da4493e52
+        G_1b084da4493e52 ~~~ O_cfededaf0e4b6b
     end
-    style O_8456dcc84b0e57 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style O_1f784fef38c69d fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_44f8a2a8c6409b fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_79c80f6b271f28 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
-    style G_cfee3173b05005 fill:transparent,stroke:transparent,stroke-width:0px
-    style G_01805e62b4b884 fill:#FFFFFF,stroke:transparent,color:#7B8794,stroke-width:0px
-    style G_a8517ea6b39f62 fill:transparent,stroke:transparent,stroke-width:0px
-    style O_ebf75c1e71d138 fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_c7752719699739 fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_019c765331a4ac fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
-    style G_6d7081667a2cab fill:#FFFFFF,stroke:#7B8794,color:#7B8794,rx:12px,ry:12px
-    style G_1a720486553cef fill:#FFFFFF,stroke:#7B8794,color:#7B8794,rx:12px,ry:12px
-    style O_c19983a8cc7be7 fill:#F8FAFC,stroke:#7B8794,color:#7B8794,stroke-width:2px,rx:8px,ry:8px
-    style G_7b171e108a70ba fill:transparent,stroke:transparent,stroke-width:0px
+    classDef DDTA_C_a6bdc037a9c8 fill:#F8FAFC,stroke:#7B8794,color:#7B8794,stroke-width:2px,rx:8px,ry:8px
+    class O_cfededaf0e4b6b DDTA_C_a6bdc037a9c8
+    classDef DDTA_C_79f0ec56fa96 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
+    class O_b774b0fca9fd2b,O_cb61daef54b698 DDTA_C_79f0ec56fa96
+    classDef DDTA_C_64f33d7120fc fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
+    class G_c61975b1657cb2 DDTA_C_64f33d7120fc
+    classDef DDTA_C_bfb810e84373 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
+    class O_c280010220776d DDTA_C_bfb810e84373
+    classDef DDTA_C_c5903718b18b fill:#FFFFFF,stroke:#7B8794,color:#7B8794,rx:12px,ry:12px
+    class G_13d59556f18fcb,G_14bde2aaf46355 DDTA_C_c5903718b18b
+    classDef DDTA_C_a6141e99742b fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
+    class O_08d5a684b7a373,O_8df8be1f3f7b04,O_ec610dd6724f02 DDTA_C_a6141e99742b
+    classDef DDTA_C_8158d1a47075 fill:#FFFFFF,stroke:transparent,color:#7B8794,stroke-width:0px
+    class G_9bb97e6c4b0f32 DDTA_C_8158d1a47075
+    classDef DDTA_C_dd44c4d967c8 fill:transparent,stroke:transparent,stroke-width:0px
+    class G_1b084da4493e52,G_9859d06996e5fa,G_e24c7c9cc80109 DDTA_C_dd44c4d967c8
     linkStyle 0 stroke:transparent,stroke-width:0px,opacity:0
     linkStyle 1,2 stroke:#7B8794,stroke-width:1.5px
     linkStyle 3,4 stroke:#7B8794,stroke-width:1.5px
@@ -2246,12 +2757,13 @@ L'esempio illustra l'applicazione congiunta delle regole CORE a un sistema di au
 
 ### 29.1 Ambito dell'esempio
 
-Il grafo RDF comprende due ambienti, due sistemi con i rispettivi Boundary, due canali di comunicazione, un database disponibile nell'ambiente server, funzioni e sottofunzioni, contratti INPUT/OUTPUT, precedenze e un processo di verifica composto da due Step. I canali sono associati alle funzioni tramite `usesChannel` e la rappresentazione del flusso si basa sull'identità dei contratti condivisi.
+Il grafo RDF comprende due ambienti, due sistemi con i rispettivi Boundary, due canali di comunicazione, un database disponibile nell'ambiente server, funzioni e sottofunzioni, contratti INPUT/OUTPUT, precedenze e un processo di verifica composto da due Step. I canali sono associati alle funzioni tramite `usesChannelForInput` e `usesChannelForOutput` (sottoproprietà di `usesChannel`); il flusso si basa sui ruoli dichiarati, non sull'identità dei contratti condivisi.
 
 Il grafo **non introduce risorse Endpoint** né asserzioni `hasSource`/`hasDestination` per questi due canali; le regole generali per tali proprietà rimangono definite nelle rispettive schede. Il modello non specifica operazioni di lettura dal database o proprietà di sicurezza. I nomi `MD5` e `SHA` identificano soltanto gli Step illustrati, senza costituire raccomandazioni implementative. Gli elementi dei contratti descrivono requisiti informativi, non le singole occorrenze dei dati.
 
 ### 29.2 Modello Turtle — individui raggruppati per classe CORE
 
+<!-- DDTA-EXAMPLE-26: sorgente Turtle integrata nella sezione 29.2 -->
 ```turtle
 @prefix ddta: <https://w3id.org/ddta/core#> .
 @prefix ex: <https://example.org/ddta/authentication#> .
@@ -2354,21 +2866,21 @@ ex:ServerBoundary a ddta:Boundary .
 
 # 8. ddta:CommunicationFunction
 ex:ReceiveAuthenticationResponse a ddta:CommunicationFunction ;
-    ddta:usesChannel ex:AuthenticationResponseChannel ;
+    ddta:usesChannelForInput ex:AuthenticationResponseChannel ;
     ddta:hasInputContract ex:AuthenticationResponseContract .
 
 ex:ReceiveCredentialCheckRequest a ddta:CommunicationFunction ;
-    ddta:usesChannel ex:CredentialCheckChannel ;
+    ddta:usesChannelForInput ex:CredentialCheckChannel ;
     ddta:hasInputContract ex:UsernamePasswordContract ;
     ddta:hasOutputContract ex:UsernamePasswordContract ;
     ddta:mustPrecede ex:VerifyCredentials .
 
 ex:SendAuthenticationResponse a ddta:CommunicationFunction ;
-    ddta:usesChannel ex:AuthenticationResponseChannel ;
+    ddta:usesChannelForOutput ex:AuthenticationResponseChannel ;
     ddta:hasOutputContract ex:AuthenticationResponseContract .
 
 ex:SendUsernameAndPassword a ddta:CommunicationFunction ;
-    ddta:usesChannel ex:CredentialCheckChannel ;
+    ddta:usesChannelForOutput ex:CredentialCheckChannel ;
     ddta:hasOutputContract ex:UsernamePasswordContract .
 
 # 9. ddta:CommunicationChannel
@@ -2391,7 +2903,7 @@ ex:SHAHashStep a ddta:ProcessStep .
 ### 29.3 Rappresentazione Mermaid integrata
 
 ```mermaid
-%%{init: {"htmlLabels":true,"theme":"base"}}%%
+%%{init: {"htmlLabels":true,"theme":"base","layout":"elk"}}%%
 flowchart TB
     O_d82b80ad03adfe("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#8870B5'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#8870B5'>AuthenticationResponseChannel</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#8870B5'>ddta:CommunicationChannel</span></div>")
     subgraph O_e7333e435145d4["<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#45845B'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#45845B'>ClientEnvironment</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#45845B'>ddta:Environment</span></div>"]
@@ -2408,10 +2920,10 @@ flowchart TB
                             direction TB
                             subgraph G_8c72adf93a227f["Contracts"]
                                 direction LR
-                                subgraph O_03f3500b1ee7b6["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationResponseContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>INPUT</span>"]
+                                subgraph O_03f3500b1ee7b6["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationResponseContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · INPUT</span></div>"]
                                     direction TB
-                                    O_0180186d972b76("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AccessToken</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>0..1</span>")
-                                    O_b21f511b470624("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationStatus</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                                    O_0180186d972b76("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AccessToken</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>0..1</span></div>")
+                                    O_b21f511b470624("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationStatus</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
                                 end
                             end
                         end
@@ -2419,10 +2931,10 @@ flowchart TB
                             direction TB
                             subgraph G_a719d936a1e540["Contracts"]
                                 direction LR
-                                subgraph O_5aa2eb64dbdec8["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>UsernamePasswordContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>OUTPUT</span>"]
+                                subgraph O_5aa2eb64dbdec8["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>UsernamePasswordContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · OUTPUT</span></div>"]
                                     direction TB
-                                    O_a26af3d3387fe5("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Password</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
-                                    O_412450a9239237("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Username</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                                    O_a26af3d3387fe5("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Password</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
+                                    O_412450a9239237("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Username</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
                                 end
                             end
                         end
@@ -2450,15 +2962,15 @@ flowchart TB
                                     direction TB
                                     subgraph G_5f203e3df1b554["Contracts"]
                                         direction LR
-                                        subgraph O_e4a643a0e735aa["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>UsernamePasswordContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>INPUT</span>"]
+                                        subgraph O_e4a643a0e735aa["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>UsernamePasswordContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · INPUT</span></div>"]
                                             direction TB
-                                            O_b4d36c41e5721b("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Password</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
-                                            O_63edcecebd4e1d("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Username</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                                            O_b4d36c41e5721b("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Password</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
+                                            O_63edcecebd4e1d("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Username</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
                                         end
-                                        subgraph O_8ec9d7601bf682["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>UsernamePasswordContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>OUTPUT</span>"]
+                                        subgraph O_8ec9d7601bf682["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>UsernamePasswordContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · OUTPUT</span></div>"]
                                             direction TB
-                                            O_ae698912deefe0("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Password</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
-                                            O_121465c1f4cae5("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Username</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                                            O_ae698912deefe0("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Password</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
+                                            O_121465c1f4cae5("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Username</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
                                         end
                                     end
                                 end
@@ -2466,10 +2978,10 @@ flowchart TB
                                     direction TB
                                     subgraph G_ed92e7f0ae565d["Contracts"]
                                         direction LR
-                                        subgraph O_8a936fbf09f036["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationResponseContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>OUTPUT</span>"]
+                                        subgraph O_8a936fbf09f036["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationResponseContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · OUTPUT</span></div>"]
                                             direction TB
-                                            O_f2563f6191e79f("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AccessToken</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>0..1</span>")
-                                            O_e22d29b91e8e94("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationStatus</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                                            O_f2563f6191e79f("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AccessToken</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>0..1</span></div>")
+                                            O_e22d29b91e8e94("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationStatus</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
                                         end
                                     end
                                 end
@@ -2477,15 +2989,15 @@ flowchart TB
                                     direction TB
                                     subgraph G_256e346c3a801e["Contracts"]
                                         direction LR
-                                        subgraph O_c47d458e764def["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>UsernamePasswordContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>INPUT</span>"]
+                                        subgraph O_c47d458e764def["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>UsernamePasswordContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · INPUT</span></div>"]
                                             direction TB
-                                            O_d55c6bd99a98ca("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Password</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
-                                            O_168d539e1c6f40("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Username</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                                            O_d55c6bd99a98ca("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Password</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
+                                            O_168d539e1c6f40("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Username</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
                                         end
-                                        subgraph O_5d6bdc775f923a["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationResponseContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>OUTPUT</span>"]
+                                        subgraph O_5d6bdc775f923a["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationResponseContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · OUTPUT</span></div>"]
                                             direction TB
-                                            O_99cba1d2e231b1("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AccessToken</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>0..1</span>")
-                                            O_6e7a652148be72("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationStatus</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                                            O_99cba1d2e231b1("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AccessToken</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>0..1</span></div>")
+                                            O_6e7a652148be72("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>AuthenticationStatus</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
                                         end
                                     end
                                     subgraph G_81bfa843d8d9fd["Subfunctions"]
@@ -2494,14 +3006,14 @@ flowchart TB
                                             direction TB
                                             subgraph G_b6fd33dac62fbf["Contracts"]
                                                 direction LR
-                                                subgraph O_38f470c4b0377b["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>ReadUserRecordContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>INPUT</span>"]
+                                                subgraph O_38f470c4b0377b["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>ReadUserRecordContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · INPUT</span></div>"]
                                                     direction TB
-                                                    O_0549c1fdff12fb("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Username</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                                                    O_0549c1fdff12fb("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Username</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
                                                 end
-                                                subgraph O_8dc00c82cf0936["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>ReadUserRecordOutputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>OUTPUT</span>"]
+                                                subgraph O_8dc00c82cf0936["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>ReadUserRecordOutputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · OUTPUT</span></div>"]
                                                     direction TB
-                                                    O_fe58d5963b8789("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>StoredMD5Hash</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
-                                                    O_6fb9587642d91c("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>StoredSHAHash</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                                                    O_fe58d5963b8789("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>StoredMD5Hash</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
+                                                    O_6fb9587642d91c("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>StoredSHAHash</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
                                                 end
                                             end
                                         end
@@ -2511,15 +3023,15 @@ flowchart TB
                                                 direction TB
                                                 subgraph G_3edd0ecf81c504["Contracts"]
                                                     direction LR
-                                                    subgraph O_27703dbd1488ae["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>PasswordVerificationInputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>INPUT</span>"]
+                                                    subgraph O_27703dbd1488ae["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>PasswordVerificationInputContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · INPUT</span></div>"]
                                                         direction TB
-                                                        O_519726d8680f7c("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Password</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
-                                                        O_fdbfbe621836c2("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>StoredMD5Hash</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
-                                                        O_7e7cff3c53847f("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>StoredSHAHash</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                                                        O_519726d8680f7c("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>Password</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
+                                                        O_fdbfbe621836c2("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>StoredMD5Hash</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
+                                                        O_7e7cff3c53847f("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>StoredSHAHash</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
                                                     end
-                                                    subgraph O_dbb04df1b2b05c["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>HashComparisonResultContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract</span></div><br/><span style='font-size:12px'>OUTPUT</span>"]
+                                                    subgraph O_dbb04df1b2b05c["<img src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyOCIgaGVpZ2h0PSIyOCIgdmlld0JveD0iMCAwIDI4IDI4IiBmaWxsPSJub25lIiBzdHJva2U9IiNDNkEzNEQiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik03IDIuN2gxMGw1IDV2MTcuNUg3YTIgMiAwIDAgMS0yLTJWNC43YTIgMiAwIDAgMSAyLTJaIi8+PHBhdGggZD0iTTE3IDIuN3Y1aDVNOSAxM2g4TTkgMTdoNE0xNC41IDIxbDIgMiA0LTQiLz48L3N2Zz4=' width='27' height='27'/><div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>HashComparisonResultContract</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:Contract · OUTPUT</span></div>"]
                                                         direction TB
-                                                        O_3943f3c108760d("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>HashComparisonResult</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span></div><br/><span style='font-size:12px'>1..1</span>")
+                                                        O_3943f3c108760d("<div style='display:inline-block;text-align:center;white-space:nowrap;line-height:1.4;padding:8px 12px;background:transparent;opacity:1;color:#C6A34D'><span style='display:block;text-align:center;font-size:17px;font-weight:700;color:#C6A34D'>HashComparisonResult</span><span style='display:block;text-align:center;font-size:12px;font-weight:400;color:#C6A34D'>ddta:ContractElement</span><span style='display:block;text-align:center;font-size:12px'>1..1</span></div>")
                                                     end
                                                 end
                                             end
@@ -2563,86 +3075,54 @@ flowchart TB
             end
         end
     end
-    O_d82b80ad03adfe -->|INPUT| O_27bb9b34c1fe27
-    O_d64f861141550f -->|INPUT| O_b511529fa31167
-    O_5c547454555191 -->|OUTPUT| O_d82b80ad03adfe
-    O_98884447bd7d2b -->|OUTPUT| O_d64f861141550f
-    style O_d82b80ad03adfe fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
-    style O_0180186d972b76 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,stroke-dasharray:5 4,rx:7px,ry:7px
-    style O_b21f511b470624 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_03f3500b1ee7b6 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_8c72adf93a227f fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_27bb9b34c1fe27 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
-    style O_a26af3d3387fe5 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_412450a9239237 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_5aa2eb64dbdec8 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_a719d936a1e540 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_98884447bd7d2b fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
-    style G_73de691b5ac8b7 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_2649054f19bb91 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
-    style O_d47c3dbf429e64 fill:#FFFFFF,stroke:#B85C5C,color:#B85C5C,stroke-width:2px,stroke-dasharray:5 4,rx:12px,ry:12px
-    style G_e22d81ebfd8e87 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px
-    style O_e7333e435145d4 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px
-    style O_d64f861141550f fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
-    style O_b4d36c41e5721b fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_63edcecebd4e1d fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_e4a643a0e735aa fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style O_ae698912deefe0 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_121465c1f4cae5 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_8ec9d7601bf682 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_5f203e3df1b554 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_b511529fa31167 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
-    style O_f2563f6191e79f fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,stroke-dasharray:5 4,rx:7px,ry:7px
-    style O_e22d29b91e8e94 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_8a936fbf09f036 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_ed92e7f0ae565d fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_5c547454555191 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
-    style O_d55c6bd99a98ca fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_168d539e1c6f40 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_c47d458e764def fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style O_99cba1d2e231b1 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,stroke-dasharray:5 4,rx:7px,ry:7px
-    style O_6e7a652148be72 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_5d6bdc775f923a fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_256e346c3a801e fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_0549c1fdff12fb fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_38f470c4b0377b fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style O_fe58d5963b8789 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_6fb9587642d91c fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_8dc00c82cf0936 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_b6fd33dac62fbf fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_078813b93be1f3 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
-    style O_519726d8680f7c fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_fdbfbe621836c2 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_7e7cff3c53847f fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_27703dbd1488ae fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style O_3943f3c108760d fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
-    style O_dbb04df1b2b05c fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
-    style G_3edd0ecf81c504 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
-    style O_8be3aa0b1d2963 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
-    style G_a680590dcbe8f8 fill:transparent,stroke:transparent,stroke-width:0px
-    style G_95f9b8a109b032 fill:#FFFFFF,stroke:transparent,color:#7B8794,stroke-width:0px
-    style G_2c39fe432b42b5 fill:transparent,stroke:transparent,stroke-width:0px
-    style O_7a95db6ca13bb2 fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_fa9ba6cbeb0612 fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
-    style G_e9b0317a4cff2e fill:#FFFFFF,stroke:#7B8794,color:#7B8794,rx:12px,ry:12px
-    style O_19fca85bb8f64e fill:#F8FAFC,stroke:#7B8794,color:#7B8794,stroke-width:2px,rx:8px,ry:8px
-    style G_4606c6eb19374e fill:transparent,stroke:transparent,stroke-width:0px
-    style G_0c90b8514c5ced fill:#F3F4F6,stroke:#374151,color:#374151,rx:12px,ry:12px
-    style G_81bfa843d8d9fd fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_cc70c019588747 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
-    style G_9c4ba6b42d5777 fill:#F3F4F6,stroke:#374151,color:#374151,rx:12px,ry:12px
-    style G_8b444d030dbb35 fill:#F3F4F6,stroke:#374151,color:#374151,rx:12px,ry:12px
-    style G_48d74b80c5f154 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
-    style O_1f33af3168223b fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
-    style G_0059f57b11ffe0 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px,stroke-dasharray:5 4
-    style O_c6db4cadbcdf68 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
-    style O_83cca3e27d0e76 fill:#FFFFFF,stroke:#B85C5C,color:#B85C5C,stroke-width:2px,stroke-dasharray:5 4,rx:12px,ry:12px
-    style G_b41e04612462ac fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px
-    style O_64be70db9b96b1 fill:#F1F5F9,stroke:#64748B,color:#64748B,stroke-width:1.5px
-    style G_41e3372971801b fill:transparent,stroke:transparent,stroke-width:0px
-    style G_1ed2f8b3ae4d26 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px,stroke-dasharray:5 4
-    style G_d380767e167d8e fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px
-    style O_0aca552ef489c2 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px
+    G_ecc44001ed852c(["INPUT"])
+    O_d82b80ad03adfe --- G_ecc44001ed852c --> O_27bb9b34c1fe27
+    G_6311d1515bbed4(["INPUT"])
+    O_d64f861141550f --- G_6311d1515bbed4 --> O_b511529fa31167
+    G_538342bbe89de7(["OUTPUT"])
+    O_5c547454555191 --- G_538342bbe89de7 --> O_d82b80ad03adfe
+    G_5b922c429e9196(["OUTPUT"])
+    O_98884447bd7d2b --- G_5b922c429e9196 --> O_d64f861141550f
+    classDef DDTA_C_ec3c1934ce4a fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px
+    class O_2649054f19bb91,O_c6db4cadbcdf68 DDTA_C_ec3c1934ce4a
+    classDef DDTA_C_764b3983e628 fill:#E8F1FF,stroke:#2563EB,color:#2563EB,stroke-width:1.5px,stroke-dasharray:5 4
+    class G_0059f57b11ffe0,G_73de691b5ac8b7 DDTA_C_764b3983e628
+    classDef DDTA_C_47a0c203a3c4 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px
+    class G_b41e04612462ac,G_d380767e167d8e,G_e22d81ebfd8e87,O_0aca552ef489c2,O_e7333e435145d4 DDTA_C_47a0c203a3c4
+    classDef DDTA_C_f87c22e49ae1 fill:#EAF5EC,stroke:#45845B,color:#45845B,stroke-width:1.5px,stroke-dasharray:5 4
+    class G_1ed2f8b3ae4d26 DDTA_C_f87c22e49ae1
+    classDef DDTA_C_1ae4e3c918ad fill:#F0EBFA,stroke:#8870B5,color:#8870B5,stroke-width:1.5px,rx:12px,ry:12px
+    class G_538342bbe89de7,G_5b922c429e9196,G_6311d1515bbed4,G_ecc44001ed852c,O_d64f861141550f,O_d82b80ad03adfe DDTA_C_1ae4e3c918ad
+    classDef DDTA_C_2c6e0269ee60 fill:#F1F5F9,stroke:#64748B,color:#64748B,stroke-width:1.5px
+    class O_64be70db9b96b1 DDTA_C_2c6e0269ee60
+    classDef DDTA_C_e3db535a2f49 fill:#F3F4F6,stroke:#374151,color:#374151,rx:12px,ry:12px
+    class G_0c90b8514c5ced,G_8b444d030dbb35,G_9c4ba6b42d5777 DDTA_C_e3db535a2f49
+    classDef DDTA_C_a6bdc037a9c8 fill:#F8FAFC,stroke:#7B8794,color:#7B8794,stroke-width:2px,rx:8px,ry:8px
+    class O_19fca85bb8f64e DDTA_C_a6bdc037a9c8
+    classDef DDTA_C_79f0ec56fa96 fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:12px,ry:12px
+    class O_03f3500b1ee7b6,O_27703dbd1488ae,O_38f470c4b0377b,O_5aa2eb64dbdec8,O_5d6bdc775f923a,O_8a936fbf09f036,O_8dc00c82cf0936,O_8ec9d7601bf682,O_c47d458e764def,O_dbb04df1b2b05c,O_e4a643a0e735aa DDTA_C_79f0ec56fa96
+    classDef DDTA_C_64f33d7120fc fill:#FFF8DE,stroke:#C6A34D,color:#C6A34D,stroke-width:1.5px,rx:8px,ry:8px
+    class G_256e346c3a801e,G_3edd0ecf81c504,G_5f203e3df1b554,G_8c72adf93a227f,G_a719d936a1e540,G_b6fd33dac62fbf,G_ed92e7f0ae565d DDTA_C_64f33d7120fc
+    classDef DDTA_C_963300b37fb7 fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,rx:7px,ry:7px
+    class O_0549c1fdff12fb,O_121465c1f4cae5,O_168d539e1c6f40,O_3943f3c108760d,O_412450a9239237,O_519726d8680f7c,O_63edcecebd4e1d,O_6e7a652148be72,O_6fb9587642d91c,O_7e7cff3c53847f,O_a26af3d3387fe5,O_ae698912deefe0,O_b21f511b470624,O_b4d36c41e5721b,O_d55c6bd99a98ca,O_e22d29b91e8e94,O_fdbfbe621836c2,O_fe58d5963b8789 DDTA_C_963300b37fb7
+    classDef DDTA_C_81f47a4bec6f fill:#FFFCF0,stroke:#C6A34D,color:#9CA3AF,stroke-width:1.2px,stroke-dasharray:5 4,rx:7px,ry:7px
+    class O_0180186d972b76,O_99cba1d2e231b1,O_f2563f6191e79f DDTA_C_81f47a4bec6f
+    classDef DDTA_C_1a97e3c85c24 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px
+    class G_48d74b80c5f154,G_81bfa843d8d9fd DDTA_C_1a97e3c85c24
+    classDef DDTA_C_bfb810e84373 fill:#FFFFFF,stroke:#374151,color:#374151,stroke-width:1.5px,rx:14px,ry:14px
+    class O_078813b93be1f3,O_1f33af3168223b,O_8be3aa0b1d2963,O_cc70c019588747 DDTA_C_bfb810e84373
+    classDef DDTA_C_c5903718b18b fill:#FFFFFF,stroke:#7B8794,color:#7B8794,rx:12px,ry:12px
+    class G_e9b0317a4cff2e DDTA_C_c5903718b18b
+    classDef DDTA_C_a6141e99742b fill:#FFFFFF,stroke:#7B8794,color:#7B8794,stroke-width:1.5px,stroke-dasharray:5 4
+    class O_7a95db6ca13bb2,O_fa9ba6cbeb0612 DDTA_C_a6141e99742b
+    classDef DDTA_C_8f7a37e1c601 fill:#FFFFFF,stroke:#8870B5,color:#8870B5,stroke-width:2px,rx:14px,ry:14px
+    class O_27bb9b34c1fe27,O_5c547454555191,O_98884447bd7d2b,O_b511529fa31167 DDTA_C_8f7a37e1c601
+    classDef DDTA_C_14ee534bd087 fill:#FFFFFF,stroke:#B85C5C,color:#B85C5C,stroke-width:2px,stroke-dasharray:5 4,rx:12px,ry:12px
+    class O_83cca3e27d0e76,O_d47c3dbf429e64 DDTA_C_14ee534bd087
+    classDef DDTA_C_8158d1a47075 fill:#FFFFFF,stroke:transparent,color:#7B8794,stroke-width:0px
+    class G_95f9b8a109b032 DDTA_C_8158d1a47075
+    classDef DDTA_C_dd44c4d967c8 fill:transparent,stroke:transparent,stroke-width:0px
+    class G_2c39fe432b42b5,G_41e3372971801b,G_4606c6eb19374e,G_a680590dcbe8f8 DDTA_C_dd44c4d967c8
     linkStyle 0 stroke:transparent,stroke-width:0px,opacity:0
     linkStyle 1,2 stroke:#7B8794,stroke-width:1.5px
     linkStyle 3 stroke:transparent,stroke-width:0px,opacity:0
@@ -2651,8 +3131,8 @@ flowchart TB
     linkStyle 7,8 stroke:#374151,stroke-width:1.8px,stroke-dasharray:6 4
     linkStyle 9,10 stroke:#374151,stroke-width:1.8px,stroke-dasharray:6 4
     linkStyle 11 stroke:transparent,stroke-width:0px,opacity:0
-    linkStyle 12 stroke:#8870B5,stroke-width:2px
-    linkStyle 13 stroke:#8870B5,stroke-width:2px
-    linkStyle 14 stroke:#8870B5,stroke-width:2px
-    linkStyle 15 stroke:#8870B5,stroke-width:2px
+    linkStyle 12,13 stroke:#8870B5,stroke-width:2px
+    linkStyle 14,15 stroke:#8870B5,stroke-width:2px
+    linkStyle 16,17 stroke:#8870B5,stroke-width:2px
+    linkStyle 18,19 stroke:#8870B5,stroke-width:2px
 ```

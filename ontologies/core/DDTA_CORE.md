@@ -38,7 +38,7 @@ Una `Function` identifica una capacità o responsabilità, indipendentemente dal
 
 ### 1.3 Comunicazione e confini
 
-`CommunicationFunction` è una specializzazione di `Function` e descrive la capacità di comunicare. `CommunicationChannel` è una specializzazione di `Resource` e rappresenta un collegamento direzionale previsto. La prima si associa al secondo tramite `usesChannel`; `hasSource` e `hasDestination` identificano le risorse alle estremità del canale. Un canale A→B non implica l'esistenza di B→A e non rappresenta un evento già avvenuto.
+`CommunicationFunction` è una specializzazione di `Function` e descrive la capacità di comunicare. `CommunicationChannel` è una specializzazione di `Resource` e rappresenta un collegamento direzionale previsto. Una `Function` può essere associata a un canale mediante `usesChannel`, senza specificarne il ruolo, oppure dichiararne l’utilizzo mediante `usesChannelForInput` (ricezione) o `usesChannelForOutput` (trasmissione). `hasSource` e `hasDestination` identificano rispettivamente la risorsa sorgente e quella destinataria del canale. Un canale A→B non implica l’esistenza del canale B→A; nessuna di queste relazioni rappresenta una comunicazione già avvenuta. I contratti di input e output restano indipendenti dalla dichiarazione dei canali.
 
 `Boundary` è un confine logico associato a un `System` mediante `hasBoundary`. La relazione `encloses` elenca le `Resource` incluse esplicitamente nel confine; più confini possono sovrapporsi. L'appartenenza a un `Boundary` non si propaga automaticamente attraverso `stores` e non garantisce proprietà crittografiche o altre misure di sicurezza. Per l'analisi dei confini si può applicare la convenzione locale di completezza definita nella scheda 11, distinta dalla semantica OWL Open World.
 
@@ -1236,7 +1236,7 @@ flowchart TB
     C -->|hasContractElement| CE
     ST -->|stores| SC
     ST -->|stores| ST
-    CF -->|usesChannel| CH
+    F -->|usesChannel / usesChannelForInput / usesChannelForOutput| CH
     CH -->|hasSource / hasDestination| R
     P -->|realizesFunction| F
     P -->|hasStep| PS
@@ -1246,7 +1246,7 @@ flowchart TB
     CH -.->|rdfs:subClassOf| R
 ```
 
-Il diagramma è una vista di sintesi delle relazioni, non un sostituto delle definizioni delle singole schede. Per chiarezza non mostra tutte le proprietà, incluse `hasPrimaryFunction`, `hasSupportFunction`, `hasSubFunction`, `mustPrecede`, `minOccurs` e `maxOccurs`.
+Il diagramma è una vista di sintesi delle relazioni, non un sostituto delle definizioni delle singole schede. Per chiarezza non mostra tutte le proprietà, incluse `hasPrimaryFunction`, `hasSupportFunction`, `hasSubFunction`, `mustPrecede`, `minOccurs` e `maxOccurs`. L’arco tra `Function` e `CommunicationChannel` riassume tre proprietà distinte: la relazione generica e i due ruoli direzionali; il diagramma non implica che siano dichiarate contemporaneamente.
 
 ### 6.3 Estensibilità e limiti deliberati
 
@@ -2878,35 +2878,71 @@ owner: ddta:CommunicationFunction
 properties:
   - iri: ddta:usesChannel
     status: approved
-    domain: ddta:CommunicationFunction
+    domain: ddta:Function
     range: ddta:CommunicationChannel
     label:
       en: uses channel
       it: utilizza un canale
     definition:
       en: >-
-        Relates a communication function to a
-        channel specified for realizing its
-        communication capability, without
-        asserting that communication has
-        actually occurred.
+        Relates a function to a communication channel
+        specified in its description without specifying
+        an input or output role and without asserting
+        that communication actually occurred.
       it: >-
-        Collega una funzione di comunicazione
-        a un canale previsto per realizzare
-        la capacità comunicativa, senza
-        affermare che una comunicazione
-        sia effettivamente avvenuta.
+        Collega una funzione a un canale previsto
+        nella sua descrizione senza specificare un ruolo
+        di ingresso o uscita e senza affermare che
+        la comunicazione sia effettivamente avvenuta.
+
+  - iri: ddta:usesChannelForInput
+    status: approved
+    subPropertyOf: ddta:usesChannel
+    domain: ddta:Function
+    range: ddta:CommunicationChannel
+    label:
+      en: uses channel for input
+      it: utilizza un canale per l'ingresso
+    definition:
+      en: >-
+        Relates a function to a communication channel
+        through which the function is expected to receive
+        input, without asserting actual transmission.
+      it: >-
+        Collega una funzione a un canale mediante il quale
+        è prevista la ricezione di un ingresso, senza
+        affermare che la trasmissione sia avvenuta.
+
+  - iri: ddta:usesChannelForOutput
+    status: approved
+    subPropertyOf: ddta:usesChannel
+    domain: ddta:Function
+    range: ddta:CommunicationChannel
+    label:
+      en: uses channel for output
+      it: utilizza un canale per l'uscita
+    definition:
+      en: >-
+        Relates a function to a communication channel
+        through which the function is expected to transmit
+        output, without asserting actual transmission.
+      it: >-
+        Collega una funzione a un canale mediante il quale
+        è prevista la trasmissione di un'uscita, senza
+        affermare che la trasmissione sia avvenuta.
 ```
 
 **Lettura delle relazioni.**
 
-`usesChannel` associa una `CommunicationFunction` a un `CommunicationChannel` previsto nella descrizione architetturale.
+`usesChannel` associa una `Function` a un `CommunicationChannel` previsto nella descrizione architetturale, senza stabilire se la funzione riceva o trasmetta tramite quel canale. L'utilizzo di un canale non richiede che la funzione sia classificata come `CommunicationFunction`.
 
-La relazione non rappresenta un trasferimento effettivamente eseguito e non implica che il canale sia operativamente disponibile.
+Le due sottoproprietà `usesChannelForInput` e `usesChannelForOutput` specificano rispettivamente la ricezione e la trasmissione previste per la funzione. Entrambe implicano `usesChannel` per `rdfs:subPropertyOf`, ma la sola relazione generica **non** permette di inferire un ruolo INPUT o OUTPUT.
 
-Una funzione può essere associata a più canali, senza richiedere che tutti siano utilizzati contemporaneamente.
+Queste relazioni non rappresentano trasferimenti effettivamente eseguiti e non implicano che il canale sia operativamente disponibile. Una funzione può prevedere più canali. Per una risposta in direzione opposta a quella del canale dichiarato occorre identificare un canale orientato nel verso opposto; il CORE non attribuisce automaticamente bidirezionalità a un canale.
 
-La presenza di `usesChannel` non modifica l'identità funzionale della comunicazione. Processi differenti possono realizzare la stessa capacità comunicativa utilizzando modalità operative diverse, nel rispetto dei contratti applicabili.
+`hasInputContract` e `hasOutputContract` descrivono requisiti funzionali e non dichiarano né richiedono autonomamente comunicazioni attraverso canali. Un output contrattuale non implica `usesChannelForOutput`: può rimanere interno alla descrizione funzionale.
+
+La presenza di un canale non modifica l'identità funzionale della comunicazione. Processi differenti possono realizzare la stessa capacità comunicativa utilizzando modalità operative diverse, nel rispetto dei contratti applicabili.
 
 #### Relazioni ereditate da Function
 
@@ -2929,7 +2965,7 @@ La funzione descrive la capacità di comunicare secondo requisiti funzionali.
 
 Il canale descrive il collegamento utilizzabile per la comunicazione. Le caratteristiche del canale, comprese la direzione e le estremità della comunicazione, appartengono alla sua descrizione.
 
-Una stessa funzione può essere associata a più canali e uno stesso canale può essere utilizzato da più funzioni di comunicazione.
+Una stessa funzione può essere associata a più canali e uno stesso canale può essere dichiarato da più funzioni. La topologia del canale è descritta da `hasSource` e `hasDestination`; il ruolo dichiarato con `usesChannelForInput` o `usesChannelForOutput` non identifica da solo quale risorsa realizzi la funzione.
 
 #### Relazione con Boundary
 
@@ -2949,7 +2985,7 @@ Le query utilizzano `ex:ExampleCommunicationFunction` come individuo di esempio.
 
 #### Q-CMF-01 — Canali associati alla funzione
 
-**Scopo:** recuperare i canali previsti per la funzione di comunicazione.
+**Scopo:** recuperare i canali previsti per la funzione di comunicazione, inclusi quelli dichiarati attraverso le proprietà direzionali.
 
 ```sparql
 PREFIX ddta: <https://w3id.org/ddta/core#>
@@ -2958,7 +2994,7 @@ PREFIX ex: <https://example.org/ddta/test#>
 SELECT DISTINCT ?channel
 WHERE {
     ex:ExampleCommunicationFunction
-        ddta:usesChannel ?channel .
+        (ddta:usesChannel|ddta:usesChannelForInput|ddta:usesChannelForOutput) ?channel .
 }
 ```
 
@@ -3019,19 +3055,37 @@ PREFIX ex: <https://example.org/ddta/test#>
 SELECT DISTINCT ?function
 WHERE {
     ?function
-        ddta:usesChannel ex:ExampleChannel .
+        (ddta:usesChannel|ddta:usesChannelForInput|ddta:usesChannelForOutput) ex:ExampleChannel .
+}
+```
+
+#### Q-CMF-06 — Ruolo esplicito dei canali per la funzione
+
+**Scopo:** recuperare soltanto i ruoli INPUT e OUTPUT dichiarati esplicitamente, senza dedurre direzioni da `usesChannel` o dai contratti.
+
+```sparql
+PREFIX ddta: <https://w3id.org/ddta/core#>
+PREFIX ex: <https://example.org/ddta/test#>
+
+SELECT DISTINCT ?channel ?role
+WHERE {
+    VALUES (?property ?role) {
+        (ddta:usesChannelForInput "INPUT")
+        (ddta:usesChannelForOutput "OUTPUT")
+    }
+    ex:ExampleCommunicationFunction ?property ?channel .
 }
 ```
 
 #### Interpretazione dei risultati
 
-`Q-CMF-01` recupera i canali dichiarati nella specifica architetturale della funzione.
+`Q-CMF-01` recupera i canali dichiarati nella specifica architetturale della funzione, includendo le sottoproprietà senza richiedere inferenza RDFS.
 
 `Q-CMF-02` e `Q-CMF-03` recuperano i contratti funzionali senza rappresentare i contenuti concretamente scambiati.
 
 `Q-CMF-04` permette di individuare le realizzazioni operative dichiarate. La presenza di `realizesFunction` non dimostra che il processo sia conforme ai contratti né che sia stato eseguito.
 
-`Q-CMF-05` permette di individuare le funzioni che condividono lo stesso canale.
+`Q-CMF-05` permette di individuare le funzioni associate allo stesso canale anche quando dichiarano un ruolo direzionale. `Q-CMF-06` restituisce i ruoli INPUT e OUTPUT esplicitamente descritti; la sola `usesChannel` non produce righe nella query dei ruoli.
 
 Le interrogazioni restituiscono le relazioni disponibili nel grafo RDF interrogato. Non dimostrano l'avvenuta comunicazione, la disponibilità operativa dei canali o la sicurezza degli scambi.
 
@@ -3042,6 +3096,8 @@ Le interrogazioni restituiscono le relazioni disponibili nel grafo RDF interroga
 | Relazione | Cardinalità | Stato |
 |---|---|---|
 | Canali associati mediante `usesChannel` | `0..*` | Facoltativo |
+| Canali dichiarati mediante `usesChannelForInput` | `0..*` | Facoltativo |
+| Canali dichiarati mediante `usesChannelForOutput` | `0..*` | Facoltativo |
 | Contratti di ingresso | `0..*` | Facoltativo |
 | Contratti di uscita | `0..*` | Facoltativo |
 | Sottofunzioni | `0..*` | Facoltativo |
@@ -3057,12 +3113,9 @@ I vincoli strutturali generali delle funzioni, compresi quelli relativi alla dec
 
 Non sono definiti controlli SHACL aggiuntivi specifici per `CommunicationFunction`.
 
-La proprietà `usesChannel` è definita mediante:
+`usesChannel`, `usesChannelForInput` e `usesChannelForOutput` hanno `rdfs:domain ddta:Function` e `rdfs:range ddta:CommunicationChannel`. Le due proprietà direzionali sono `rdfs:subPropertyOf ddta:usesChannel`. Non rimane una seconda dichiarazione di dominio `ddta:CommunicationFunction` per `usesChannel`: più domini OWL si sommerebbero, anziché sostituirsi.
 
-- `rdfs:domain ddta:CommunicationFunction`;
-- `rdfs:range ddta:CommunicationChannel`.
-
-Gli assiomi RDFS/OWL definiscono la semantica della proprietà e consentono le relative inferenze di classificazione.
+Gli assiomi RDFS/OWL definiscono la semantica delle proprietà e consentono le relative inferenze di classificazione. Non verificano automaticamente che la funzione risieda nella risorsa sorgente o destinataria del canale; il CORE non introduce una relazione supplementare per questo controllo. Le cardinalità documentali `1..1` delle estremità del canale sono verificate nella scheda `CommunicationChannel`.
 
 I controlli SHACL già definiti per `Function` rimangono applicabili agli individui della sottoclasse `CommunicationFunction`, quando la validazione riconosce la gerarchia `rdfs:subClassOf`.
 
@@ -3070,20 +3123,27 @@ Non viene generato uno `sh:NodeShape` aggiuntivo specifico per `CommunicationFun
 
 ### 12.5 Esempio illustrativo (escluso dal TTL generato)
 
-L'esempio rappresenta una funzione che consente di comunicare i risultati di un'analisi dermatologica a un servizio destinatario.
+L'esempio rappresenta due funzioni di comunicazione: una trasmette i risultati di un'analisi dermatologica e l'altra li riceve attraverso un unico canale direzionale.
 
-La funzione è associata a un contratto di ingresso, a un contratto di uscita e a un canale di comunicazione previsto.
+La funzione trasmittente dichiara i propri contratti di ingresso e di uscita e usa `ClinicalResultChannel` in OUTPUT. La funzione ricevente dichiara lo stesso canale in INPUT e un proprio contratto di ingresso. Il contratto di ingresso della funzione trasmittente non implica l'utilizzo di un ulteriore canale. Le due estremità del canale sono risorse dichiarate esplicitamente nell'esempio.
 
 ```mermaid
 flowchart TB
     F["ClinicalResultCommunication<br/>CommunicationFunction"]
+    FR["ReceiveClinicalResult<br/>CommunicationFunction"]
     CI["ClinicalResultInputContract<br/>Contract"]
     CO["ClinicalResultOutputContract<br/>Contract"]
     CH["ClinicalResultChannel<br/>CommunicationChannel"]
+    SRC["ClinicalResultSource<br/>Resource"]
+    DEST["ClinicalResultDestination<br/>Resource"]
 
     F -->|"hasInputContract"| CI
     F -->|"hasOutputContract"| CO
-    F -->|"usesChannel"| CH
+    F -->|"usesChannelForOutput"| CH
+    FR -->|"usesChannelForInput"| CH
+    FR -->|"hasInputContract"| CO
+    CH -->|"hasSource"| SRC
+    CH -->|"hasDestination"| DEST
 ```
 
 **Rappresentazione Turtle:**
@@ -3098,8 +3158,13 @@ ex:ClinicalResultCommunication
         ex:ClinicalResultInputContract ;
     ddta:hasOutputContract
         ex:ClinicalResultOutputContract ;
-    ddta:usesChannel
+    ddta:usesChannelForOutput
         ex:ClinicalResultChannel .
+
+ex:ReceiveClinicalResult
+    a ddta:CommunicationFunction ;
+    ddta:hasInputContract ex:ClinicalResultOutputContract ;
+    ddta:usesChannelForInput ex:ClinicalResultChannel .
 
 ex:ClinicalResultInputContract
     a ddta:Contract .
@@ -3107,8 +3172,16 @@ ex:ClinicalResultInputContract
 ex:ClinicalResultOutputContract
     a ddta:Contract .
 
+ex:ClinicalResultSource
+    a ddta:Resource .
+
+ex:ClinicalResultDestination
+    a ddta:Resource .
+
 ex:ClinicalResultChannel
-    a ddta:CommunicationChannel .
+    a ddta:CommunicationChannel ;
+    ddta:hasSource ex:ClinicalResultSource ;
+    ddta:hasDestination ex:ClinicalResultDestination .
 ```
 
 Poiché `CommunicationFunction` è una sottoclasse di `Function`, un reasoner può inferire:
@@ -3116,13 +3189,15 @@ Poiché `CommunicationFunction` è una sottoclasse di `Function`, un reasoner pu
 ```turtle
 ex:ClinicalResultCommunication
     a ddta:Function .
+ex:ReceiveClinicalResult
+    a ddta:Function .
 ```
 
-L'esempio distingue la capacità funzionale di comunicazione dal canale previsto e dai contratti che specificano gli ingressi e le uscite.
+L'esempio distingue le capacità funzionali dal canale previsto e dai contratti che specificano gli ingressi e le uscite. Il contratto di uscita del trasmittente è riutilizzato esplicitamente come contratto di ingresso del ricevente: tale riuso non viene dedotto automaticamente dai ruoli del canale.
 
 Non vengono rappresentate operazioni concretamente eseguite, protocolli tecnici o eventi di trasferimento.
 
-Il canale è identificato senza specificarne in questo esempio le estremità e la direzione, che vengono trattate nella scheda `CommunicationChannel`.
+Il canale è orientato da `ClinicalResultSource` verso `ClinicalResultDestination`, come richiesto dai vincoli documentali `CHN-01` e `CHN-02`. L'esempio non specifica quali risorse realizzino le funzioni trasmittente e ricevente: tale corrispondenza non viene dedotta dalla sola direzione del canale.
 
 La presenza del canale non dimostra che la comunicazione sia stata effettuata, né che abbia attraversato un Boundary o rispettato particolari requisiti di sicurezza.
 
@@ -3232,15 +3307,21 @@ Sorgente e destinazione possono coincidere. Tale possibilità non viene esclusa 
 
 #### Collegamento con CommunicationFunction
 
-La proprietà `usesChannel`, definita nella scheda `CommunicationFunction`, associa una funzione di comunicazione ai canali previsti per la sua realizzazione.
+Le proprietà `usesChannel`, `usesChannelForInput` e `usesChannelForOutput` sono definite nella scheda `CommunicationFunction`, ma hanno dominio generale `ddta:Function`, non esclusivamente `ddta:CommunicationFunction`.
 
-`CommunicationFunction → usesChannel → CommunicationChannel`
+`Function → usesChannel → CommunicationChannel` (associazione senza ruolo)
 
-Uno stesso canale può essere associato a più funzioni e una funzione può prevedere più canali.
+`Function → usesChannelForInput → CommunicationChannel` (ricezione)
 
-Il canale non specifica autonomamente i contenuti che devono essere comunicati. I relativi requisiti sono definiti dai contratti di ingresso e di uscita delle funzioni.
+`Function → usesChannelForOutput → CommunicationChannel` (trasmissione)
 
-La presenza di `usesChannel` non dimostra che il canale sia stato effettivamente utilizzato durante un'esecuzione.
+Uno stesso canale può essere associato a più funzioni e una funzione può prevedere più canali. L'impiego di `usesChannelForInput` e `usesChannelForOutput` implica la relazione generale `usesChannel`, non viceversa.
+
+Il canale non specifica autonomamente i contenuti che devono essere comunicati. I relativi requisiti sono definiti dai contratti di ingresso e di uscita delle funzioni, senza associare automaticamente un contratto a uno specifico canale.
+
+Il ruolo INPUT o OUTPUT deve essere dichiarato dalla funzione. Non si deduce dai contratti e non stabilisce di per sé una corrispondenza fra la funzione e la risorsa `hasSource` o `hasDestination`. Tale verifica può essere specificata in un'estensione architetturale, senza introdurre nuove proprietà nel CORE.
+
+La presenza di una relazione di utilizzo del canale non dimostra che il canale sia stato effettivamente utilizzato durante un'esecuzione.
 
 #### Direzione e precedenza funzionale
 
@@ -3288,7 +3369,7 @@ WHERE {
 
 #### Q-CHN-02 — Funzioni associate al canale
 
-**Scopo:** recuperare le funzioni di comunicazione che dichiarano di utilizzare il canale.
+**Scopo:** recuperare le funzioni che dichiarano di utilizzare il canale, incluse quelle che ne specificano il ruolo INPUT o OUTPUT.
 
 ```sparql
 PREFIX ddta: <https://w3id.org/ddta/core#>
@@ -3297,7 +3378,7 @@ PREFIX ex: <https://example.org/ddta/test#>
 SELECT DISTINCT ?function
 WHERE {
     ?function
-        ddta:usesChannel ex:ExampleChannel .
+        (ddta:usesChannel|ddta:usesChannelForInput|ddta:usesChannelForOutput) ex:ExampleChannel .
 }
 ```
 
@@ -3369,15 +3450,33 @@ Applicando la convenzione locale di analisi definita nella scheda `Boundary`, un
 
 Quando i due valori sono differenti, il canale rappresenta un possibile attraversamento del Boundary considerato.
 
+#### Q-CHN-05 — Ruoli direzionali dichiarati per il canale
+
+**Scopo:** distinguere le funzioni che dichiarano la ricezione e la trasmissione attraverso lo stesso canale, senza inferire il ruolo dalle estremità.
+
+```sparql
+PREFIX ddta: <https://w3id.org/ddta/core#>
+PREFIX ex: <https://example.org/ddta/test#>
+
+SELECT DISTINCT ?function ?role
+WHERE {
+    VALUES (?property ?role) {
+        (ddta:usesChannelForInput "INPUT")
+        (ddta:usesChannelForOutput "OUTPUT")
+    }
+    ?function ?property ex:ExampleChannel .
+}
+```
+
 #### Interpretazione dei risultati
 
 `Q-CHN-01` recupera le estremità e la direzione del canale.
 
-`Q-CHN-02` identifica le funzioni che prevedono il canale nella propria descrizione architetturale.
+`Q-CHN-02` identifica le funzioni che prevedono il canale nella propria descrizione architetturale, anche quando usano una delle sottoproprietà direzionali.
 
 `Q-CHN-03` recupera i collegamenti dichiarati in una direzione specifica.
 
-`Q-CHN-04` permette di confrontare le appartenenze delle due estremità ai Boundary del sistema.
+`Q-CHN-04` permette di confrontare le appartenenze delle due estremità ai Boundary del sistema. `Q-CHN-05` restituisce soltanto i ruoli INPUT e OUTPUT dichiarati esplicitamente e non assegna automaticamente i ruoli alle funzioni in base alla topologia.
 
 Le query restituiscono informazioni presenti nel grafo RDF, comprese eventuali inferenze disponibili durante l'interrogazione.
 
@@ -3396,12 +3495,14 @@ Le interrogazioni descrivono comunicazioni previste, senza dimostrare che siano 
 | `hasSource` | `1..1` | Obbligatorio |
 | `hasDestination` | `1..1` | Obbligatorio |
 | Funzioni associate mediante `usesChannel` | `0..*` | Nessun vincolo di presenza |
+| Funzioni che usano il canale mediante `usesChannelForInput` | `0..*` | Nessun vincolo di presenza |
+| Funzioni che usano il canale mediante `usesChannelForOutput` | `0..*` | Nessun vincolo di presenza |
 | Boundary che racchiudono la sorgente | `0..*` | Nessun vincolo di presenza |
 | Boundary che racchiudono la destinazione | `0..*` | Nessun vincolo di presenza |
 
-Ogni individuo di `CommunicationChannel` deve dichiarare esattamente una sorgente e una destinazione.
+Ogni individuo di `CommunicationChannel` deve dichiarare esattamente una sorgente e una destinazione, anche quando compare soltanto come oggetto di `usesChannelForInput` o `usesChannelForOutput`.
 
-Non è richiesto che le due risorse siano differenti.
+Non è richiesto che le due risorse siano differenti. Le cardinalità `1..1` sono vincoli documentali SHACL, non assiomi OWL di cardinalità e non vengono soddisfatte automaticamente dall'inferenza RDFS.
 
 Un canale può essere identificato senza specificare immediatamente una funzione che lo utilizza.
 
@@ -3518,8 +3619,8 @@ flowchart TB
     BA -->|"encloses"| A
     BB -->|"encloses"| B
 
-    FAB -->|"usesChannel"| CAB
-    FBA -->|"usesChannel"| CBA
+    FAB -->|"usesChannelForOutput"| CAB
+    FBA -->|"usesChannelForOutput"| CBA
 
     CAB -->|"hasSource"| A
     CAB -->|"hasDestination"| B
@@ -3574,11 +3675,11 @@ ex:ChannelBA
 
 ex:CommunicationAB
     a ddta:CommunicationFunction ;
-    ddta:usesChannel ex:ChannelAB .
+    ddta:usesChannelForOutput ex:ChannelAB .
 
 ex:CommunicationBA
     a ddta:CommunicationFunction ;
-    ddta:usesChannel ex:ChannelBA .
+    ddta:usesChannelForOutput ex:ChannelBA .
 ```
 
 Poiché `CommunicationChannel` è sottoclasse di `Resource`, un reasoner può inferire:
@@ -3593,6 +3694,8 @@ Analogamente, `StoreA` e `StoreB` appartengono alla classe `Resource` mediante l
 I due canali identificano direzioni differenti e soddisfano i controlli `CHN-01` e `CHN-02`.
 
 Applicando la convenzione locale di appartenenza ai Boundary, entrambi i canali rappresentano comunicazioni che attraversano `BoundaryA` e `BoundaryB`, con direzioni opposte.
+
+Le funzioni `CommunicationAB` e `CommunicationBA` dichiarano ciascuna un utilizzo in OUTPUT del proprio canale orientato. Non sono dichiarate funzioni riceventi in questo esempio. La proprietà `usesChannelForOutput` non altera `hasSource` o `hasDestination` e non attribuisce automaticamente alla funzione l'appartenenza alla risorsa sorgente.
 
 Non è dichiarata alcuna precedenza funzionale tra `CommunicationAB` e `CommunicationBA`. La presenza di due canali opposti non impone un ordine di comunicazione.
 
@@ -4288,8 +4391,8 @@ Un sistema definisce due confini logici. `StoreA` appartiene al primo e `StoreB`
 
 ```mermaid
 flowchart TB
-    F1["RequestCommunication · CommunicationFunction"] -->|usesChannel| C1["ChannelAB · CommunicationChannel"]
-    F2["ResponseCommunication · CommunicationFunction"] -->|usesChannel| C2["ChannelBA · CommunicationChannel"]
+    F1["RequestCommunication · CommunicationFunction"] -->|usesChannelForOutput| C1["ChannelAB · CommunicationChannel"]
+    F2["ResponseCommunication · CommunicationFunction"] -->|usesChannelForOutput| C2["ChannelBA · CommunicationChannel"]
     C1 -->|hasSource| A["StoreA · Store"]
     C1 -->|hasDestination| B["StoreB · Store"]
     C2 -->|hasSource| B
@@ -4310,16 +4413,16 @@ ex:BoundaryB a ddta:Boundary ; ddta:encloses ex:StoreB .
 ex:StoreA a ddta:Store .
 ex:StoreB a ddta:Store .
 ex:RequestCommunication a ddta:CommunicationFunction ;
-    ddta:usesChannel ex:ChannelAB .
+    ddta:usesChannelForOutput ex:ChannelAB .
 ex:ResponseCommunication a ddta:CommunicationFunction ;
-    ddta:usesChannel ex:ChannelBA .
+    ddta:usesChannelForOutput ex:ChannelBA .
 ex:ChannelAB a ddta:CommunicationChannel ;
     ddta:hasSource ex:StoreA ; ddta:hasDestination ex:StoreB .
 ex:ChannelBA a ddta:CommunicationChannel ;
     ddta:hasSource ex:StoreB ; ddta:hasDestination ex:StoreA .
 ```
 
-Entrambi i canali soddisfano i vincoli di sorgente e destinazione. Il sistema soddisfa il vincolo relativo alla funzione primaria. L'analisi di attraversamento applica le regole di appartenenza della scheda 11 a ciascun Boundary, senza attribuire automaticamente proprietà di sicurezza.
+Entrambi i canali soddisfano i vincoli di sorgente e destinazione. Le funzioni `RequestCommunication` e `ResponseCommunication` dichiarano un ruolo OUTPUT sui rispettivi canali, senza introdurre funzioni riceventi non documentate. Il sistema soddisfa il vincolo relativo alla funzione primaria. L'analisi di attraversamento applica le regole di appartenenza della scheda 11 a ciascun Boundary, senza attribuire automaticamente proprietà di sicurezza.
 
 ### 16.3 Due organizzazioni operative compatibili con la stessa precedenza funzionale
 
@@ -4363,10 +4466,28 @@ flowchart TB
 
 Ciò non prova una vulnerabilità del processo federato né l'assenza di altre minacce nel processo centralizzato. L'applicabilità dello scenario dipende dalla presenza del canale e dalle capacità dell'avversario; l'effettiva vulnerabilità richiede analisi distinta. Nessuna proprietà di attacco viene aggiunta al CORE da questo esempio.
 
-## 18. Delimitazione e verifiche successive
+## 18. Generazione del vocabolario OWL/Turtle
 
-Il CORE contiene **13 classi** documentate nelle sezioni 2–5 e 7–15. Il documento definisce il vocabolario e i vincoli esprimibili nella presente modellazione; non afferma di dimostrare la correttezza o la completezza di ogni descrizione DDTA.
+Le dichiarazioni normative `yaml ddta-ontology` di questo documento costituiscono la sorgente del vocabolario OWL/Turtle del CORE. Il tool `ontology_from_md.py` valida tali dichiarazioni e genera il file `core.ttl`.
 
-Prima di utilizzare i file generati, occorrerà verificare separatamente: la corrispondenza tra dichiarazioni YAML e TTL OWL; l'esecuzione dei controlli SHACL; la validità e i risultati delle query SPARQL; le proprietà di inferenza; e la coerenza degli esempi con la semantica delle classi e delle proprietà.
+I comandi seguenti si eseguono **dalla directory che contiene `ontology_from_md.py`**. Il percorso del Markdown sorgente e la directory di output sono parametri espliciti: non richiedono un albero di repository prestabilito.
 
-L'ontologia specializzata dei processi potrà introdurre condizioni, guardie, alternative, parallelismo e sincronizzazione senza modificare l'identità degli individui già descritti nel CORE. Gli aspetti tecnici dell'implementazione e i collegamenti al codice rimangono estensioni da definire esplicitamente.
+**Validazione senza scrittura:**
+
+```powershell
+python .\ontology_from_md.py --source "<percorso-DDTA_CORE.md>" --validate-only
+```
+
+**Generazione del Turtle:**
+
+```powershell
+python .\ontology_from_md.py --source "<percorso-DDTA_CORE.md>" --generate --output-dir "<directory-di-output>"
+```
+
+**Confronto del Turtle già generato, senza sovrascriverlo:**
+
+```powershell
+python .\ontology_from_md.py --source "<percorso-DDTA_CORE.md>" --check --output-dir "<directory-di-output>"
+```
+
+Il file `core.ttl` viene scritto nella directory di output indicata. `--source` seleziona il documento esplicitamente; per generare più moduli o risolvere dipendenze dichiarate in altri documenti, il parametro può essere ripetuto. Il parser esporta esclusivamente le dichiarazioni normative, non gli esempi illustrativi, le query SPARQL o i diagrammi Mermaid. L'installazione delle dipendenze Python e l'organizzazione dei file del toolkit sono descritte nella relativa documentazione tecnica.

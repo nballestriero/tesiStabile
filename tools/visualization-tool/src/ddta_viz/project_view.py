@@ -361,29 +361,76 @@ def project(graph: Graph, rules: Catalog, *, focus=None, view='association', str
             dst= str(o) if rep.get('destination')!='subject' else str(s)
             edges.append({'kind':rep['type'], 'predicate':pred,'rdfSubject':str(s),'rdfObject':str(o),
                           'source':src,'target':dst,'rule':rule})
-    # Communication view is explicit; in functional-flow the association edges are suppressed.
+    # A communication-flow projection is driven by RDF *directional channel
+    # associations*, never inferred from the presence/identity of contracts.
+    # All predicate names and presentation rules come from the compiled YAML.
     if view == 'functional-flow':
-        association_preds={r['inputs']['association'] for r in rules.projections.values() if r.get('view')=='communication-functional-flow'}
-        edges=[e for e in edges if e['predicate'] not in association_preds]
-        for pr in rules.projections.values():
-            if pr.get('view')!='communication-functional-flow':continue
-            assoc=pr['inputs']['association']; sender=pr['inputs']['senderContract']; receiver=pr['inputs']['receiverContract']
-            for channel in sorted([URIRef(x) for x in visible if rules.matches(defs[x]['types'],pr['target'])],key=str):
-                fs=[URIRef(x) for x in visible if (URIRef(x),iri(assoc),channel) in graph]
-                sources=[(f,c) for f in fs for c in props(f,sender)]
-                targets=[(f,c) for f in fs for c in props(f,receiver)]
-                matches_=[(f,c,g) for f,c in sources for g,d in targets if c==d and f!=g]
-                if len(matches_)!=1:
-                    if fs:
-                        diag.append({'code':'COMMUNICATION_FLOW_NOT_DETERMINABLE','severity':'warning',
-                                     'channel':str(channel),'matches':len(matches_)})
-                    continue
-                f,c,g=matches_[0]
-                r=pr['render']
-                for name,source,target in [('outputEdge',f,channel),('inputEdge',channel,g)]:
-                    edges.append({'kind':'projection-edge','predicate':assoc,
-                                  'rdfSubject':str(f),'rdfObject':str(channel),'source':str(source),'target':str(target),
-                                  'rule':r,'label':r[name]['label'],'contractIri':str(c)})
+        communication_rules = [pr for pr in rules.projections.values()
+                               if pr.get('view') == 'communication-functional-flow']
+        suppressed = set()
+        for pr in communication_rules:
+            for key in ('association', 'outputAssociation', 'inputAssociation'):
+                value = pr.get('inputs', {}).get(key)
+                if value:
+                    suppressed.add(value)
+        edges = [edge for edge in edges if edge['predicate'] not in suppressed]
+        for pr in communication_rules:
+            config = pr.get('inputs', {})
+            generic = config.get('association')
+            output_pred = config.get('outputAssociation')
+            input_pred = config.get('inputAssociation')
+            if not output_pred or not input_pred:
+                raise RuleError('Proiezione comunicativa: outputAssociation/inputAssociation mancanti')
+            pred_out, pred_in = iri(output_pred), iri(input_pred)
+            if pred_out is None or pred_in is None:
+                raise RuleError('Proiezione comunicativa: prefisso delle proprietà direzionali sconosciuto')
+            predicate_generic = iri(generic) if generic else None
+            for channel in sorted((URIRef(x) for x in visible
+                                   if rules.matches(defs[x]['types'], pr['target'])), key=str):
+                explicit_roles = set()
+                for role_key, predicate, source_from_function in (
+                    ('outputEdge', output_pred, True),
+                    ('inputEdge', input_pred, False),
+                ):
+                    predicate_uri = iri(predicate)
+                    for function in sorted(graph.subjects(predicate_uri, channel), key=str):
+                        if str(function) not in visible:
+                            continue
+                        required_class = config.get('functionClass')
+                        if required_class and not rules.matches(defs[str(function)]['types'], required_class):
+                            diag.append({
+                                'code': 'COMMUNICATION_ROLE_SUBJECT_NOT_FUNCTION',
+                                'severity': 'warning', 'channel': str(channel),
+                                'function': str(function), 'predicate': predicate,
+                                'expectedClass': required_class,
+                            })
+                            continue
+                        explicit_roles.add(str(function))
+                        role_rule = pr['render'][role_key]
+                        if source_from_function:
+                            source, target = function, channel
+                        else:
+                            source, target = channel, function
+                        edges.append({
+                            'kind': 'projection-edge', 'predicate': predicate,
+                            'rdfSubject': str(function), 'rdfObject': str(channel),
+                            'source': str(source), 'target': str(target),
+                            'rule': pr['render'], 'label': role_rule['label'],
+                            'renderRole': role_key,
+                        })
+                        mark(function, predicate, channel)
+                # A non-qualified usesChannel still denotes an association,
+                # but does not tell us whether any information is sent/received.
+                if predicate_generic is not None:
+                    legacy_functions = sorted((f for f in graph.subjects(predicate_generic, channel)
+                                               if str(f) in visible and str(f) not in explicit_roles), key=str)
+                    for function in legacy_functions:
+                        diag.append({
+                            'code': 'COMMUNICATION_CHANNEL_ROLE_UNSPECIFIED',
+                            'severity': 'warning', 'channel': str(channel),
+                            'function': str(function),
+                            'reason': 'generic-association-has-no-input-output-role',
+                        })
     # Order graphical siblings only where a rule explicitly describes a
     # directed relationship scoped to selected sibling functions. The rule
     # identifies the RDF predicate; this renderer contains no fixed CORE IRI.
