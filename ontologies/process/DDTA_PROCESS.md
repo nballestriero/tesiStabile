@@ -1,6 +1,6 @@
-# DDTA — Process Ontology: guida di definizione e schede ontologiche
+# DDTA — Ontologia PROCESS: architettura dei processi e schede ontologiche
 
-Questo documento costituisce la **definizione di riferimento della DDTA Process Ontology**, estensione modulare del documento normativo `DDTA_CORE.md`. I blocchi `yaml ddta-ontology` dichiarano le classi e proprietà dell'estensione; i blocchi `yaml ontology-validation` dichiarano controlli documentali. I diagrammi Mermaid, le query SPARQL, gli esempi Turtle e le rappresentazioni SHACL non sono dichiarazioni aggiuntive del vocabolario e **non** confluiscono automaticamente nel Turtle generato.
+Questo documento costituisce la **definizione di riferimento della DDTA Process Ontology**, estensione modulare del documento normativo `DDTA_CORE.md`. I blocchi `yaml ddta-ontology` dichiarano le classi e proprietà dell'estensione; i blocchi `yaml ontology-validation` dichiarano controlli documentali. Le query SPARQL e i controlli SHACL non sono dichiarazioni aggiuntive del vocabolario e **non** confluiscono automaticamente nel Turtle generato. I casi applicativi e i relativi Turtle sono mantenuti in documenti separati dalla specifica normativa. La rappresentazione visiva degli stessi concetti è definita separatamente nella guida grafica PROCESS.
 
 **Namespace dell'estensione:** `process: <https://w3id.org/ddta/process#>`; `ddta: <https://w3id.org/ddta/core#>` resta riservato al CORE. Si tratta di IRI adottati nella specifica, senza assumere che esista una pubblicazione web o registrazione esterna già attiva.
 
@@ -8,11 +8,11 @@ Questo documento costituisce la **definizione di riferimento della DDTA Process 
 
 ## 1. Scopo e confini
 
-La DDTA Process Ontology **estende** il DDTA CORE per descrivere **COME** un processo è organizzato: transizioni, condizioni, diramazioni, concorrenza logica, sincronizzazioni, composizione e riferimenti granulari al codice e alla configurazione. Non ridefinisce il **COSA**: le capacità funzionali e i relativi contratti restano nel CORE.
+La DDTA Process Ontology **estende** il DDTA CORE per descrivere **COME** un processo è organizzato: successioni, confronti atomici, diramazioni, concorrenza logica, sincronizzazioni, composizione e riferimenti granulari al codice e alla configurazione. Non ridefinisce il **COSA**: le capacità funzionali e i relativi contratti restano nel CORE.
 
 Il modello rappresenta il **comportamento previsto**, non singole esecuzioni avvenute. Non assegna lo stato `RUNNING`, `WAITING` o `STOPPED` direttamente a `ddta:Process`; un'eventuale ontologia delle esecuzioni potrà distinguere istanze operative, eventi e stati osservati. Nella Process Ontology si possono descrivere percorsi che *continuano*, *attendono* oppure *terminano* senza affermare che una particolare esecuzione li abbia percorsi.
 
-Sono rappresentabili nel modello: **sequenzialità**, **scelte XOR**, **concorrenza logica**, **sincronizzazione ALL/ANY/N-of-M**, **cicli**, **condizioni composte**, **sottoprocessi richiamati** e **collegamenti granulari al codice**. Il parallelismo fisico (processori, worker, thread, code, scheduling), gli stati effettivi e il grafo delle chiamate software restano specializzazioni possibili.
+Sono rappresentabili nel modello: **sequenzialità**, **scelte XOR**, **concorrenza logica**, **sincronizzazione ALL/ANY/N-of-M**, **cicli**, **sottoprocessi richiamati** e **collegamenti granulari al codice**. Il parallelismo fisico (processori, worker, thread, code, scheduling), gli stati effettivi e il grafo delle chiamate software restano specializzazioni possibili.
 
 ### 1.1 Riutilizzo del CORE
 
@@ -21,7 +21,7 @@ Sono rappresentabili nel modello: **sequenzialità**, **scelte XOR**, **concorre
 | `ddta:Process` | Identità della descrizione operativa |
 | `ddta:ProcessStep` | Attività o punto operativo appartenente a un processo |
 | `ddta:hasStep` | Appartenenza diretta degli Step a un Process |
-| `ddta:hasNextStep` | Collegamento diretto possibile tra Step, senza guardie |
+| `ddta:hasNextStep` | Successione pianificata e diretta tra Step; l'ordine rimane esplicito nel TTL |
 | `ddta:realizesFunction` | Process → Function; non dimostra conformità |
 | `ddta:Function`, `ddta:Contract`, `ddta:ContractElement` | Specifica funzionale, distinta dal processo |
 | `ddta:Resource` | Risorse tecniche, implementative e di configurazione |
@@ -30,43 +30,29 @@ Sono rappresentabili nel modello: **sequenzialità**, **scelte XOR**, **concorre
 
 ### 1.2 Classi dell’estensione
 
-| Sezione | Classe | Relazione con CORE / estensione |
-|---|---|---|
-| 4 | `ProcessTransition` | Oggetto che dettaglia un collegamento tra Step |
-| 5 | `Condition` | Criterio identificabile, indipendente dalla valutazione avvenuta |
-| 6 | `AtomicCondition` | Sottoclasse di Condition |
-| 7 | `CompositeCondition` | Sottoclasse di Condition |
-| 8 | `Operand` | Riferimento semantico a un valore o a una specifica |
-| 9 | `ControlNode` | Sottoclasse di `ddta:ProcessStep` |
-| 10 | `SynchronizationNode` | Sottoclasse di ControlNode |
-| 11 | `CodeReference` | Riferimento granulare al codice; **non** sottoclasse di Resource |
-| 12 | Composizione e richiamo | Proprietà `hasSubProcess`, `hasInitialStep` e `invokesProcess` |
+| Classe | Uso |
+|---|---|
+| `process:AtomicCondition` | Confronto binario formalizzato, associabile a un nodo decisionale |
+| `process:Operand` | Riferimento ai valori del confronto |
+| `process:ControlNode` | Specializzazione di `ddta:ProcessStep`; decisioni, controlli e regioni concorrenti |
+| `process:CodeReference` | Identificazione granulare di codice |
 
-### 1.3 Diagramma complessivo
+Una condizione atomica specifica un solo confronto binario. Più confronti possono essere organizzati mediante controlli successivi quando occorre documentarne anche l’ordine di valutazione; una sequenza ordinata non è in generale equivalente a un’espressione booleana priva di ordine.
 
-```mermaid
-flowchart TB
-  P["ddta:Process"] -->|"ddta:hasStep"| S["ddta:ProcessStep"]
-  P -->|"hasTransition"| T["ProcessTransition"]
-  P -->|"hasSubProcess"| SP["ddta:Process (sottoprocesso)"]
-  S -->|"invokesProcess"| SP
-  P -->|"hasInitialStep"| S
-  T -->|"fromStep"| S
-  T -->|"toStep"| S
-  T -->|"hasGuard"| C["Condition"]
-  P -->|"hasActivationCondition"| C
-  S -->|"hasActivationCondition"| C
-  AC["AtomicCondition"] -->|"subClassOf"| C
-  CC["CompositeCondition"] -->|"subClassOf"| C
-  AC -->|"hasLeftOperand / hasRightOperand"| O["Operand"]
-  CC -->|"hasCondition"| C
-  CN["ControlNode"] -->|"subClassOf"| S
-  SN["SynchronizationNode"] -->|"subClassOf"| CN
-  S -->|"hasCodeReference"| CR["CodeReference"]
-  S -->|"implementedBy / usesConfiguration"| R["ddta:Resource"]
-```
+### 1.3 Relazioni essenziali
 
-*Le frecce `subClassOf` raffigurano relazioni tra classi, non tra individui. Le restanti frecce rappresentano proprietà dell’estensione. I collegamenti a CodeReference e Resource valgono anche per Process, dove indicato nelle rispettive schede.*
+| Soggetto | Relazione | Oggetto | Significato |
+|---|---|---|---|
+| `ddta:Process` | `ddta:hasStep` (CORE) | `ddta:ProcessStep` | Appartenenza diretta di uno Step |
+| `ddta:ProcessStep` | `ddta:hasNextStep` (CORE) | `ddta:ProcessStep` | Successione prevista |
+| `process:ControlNode` | `rdfs:subClassOf` | `ddta:ProcessStep` | Specializzazione del passo operativo |
+| `process:ControlNode` | `process:evaluatesCondition` | `process:AtomicCondition` | Criterio formalizzato del controllo |
+| `process:ControlNode` | `process:hasTrueNextStep` / `process:hasFalseNextStep` | `ddta:ProcessStep` | Successione condizionata |
+| `process:AtomicCondition` | `process:hasLeftOperand` / `process:hasRightOperand` | `process:Operand` | Identificazione degli operandi |
+| `ddta:Process` | `process:hasSubProcess` | `ddta:Process` | Composizione strutturale |
+| `ddta:ProcessStep` | `process:invokesProcess` | `ddta:Process` | Richiamo previsto |
+
+`hasNextStep` rappresenta la successione; non implica passaggio o disponibilità dei dati. `invokesProcess` dichiara un richiamo previsto di un processo distinto, senza implicare l'attesa del suo completamento. I contratti dei dati e i collegamenti informativi restano distinti dal flusso di controllo. Le proprietà dei rami sono approvate in questa specifica, ma la promozione nei repository richiede la verifica degli artefatti generati.
 
 ## 2. Principi di interpretazione
 
@@ -80,351 +66,34 @@ flowchart TB
 
 ## 3. Convenzioni di authoring e verificabilità
 
-- Gli IRI della Process Ontology utilizzano `process:` negli esempi; `ddta:` designa esclusivamente le entità del CORE.
+- Gli IRI dell'estensione utilizzano il prefisso `process:`; `ddta:` designa le entità definite nel CORE.
 - Le definizioni bilingui sono incluse nei blocchi `yaml ddta-ontology` con `module: process`, `status: approved` e `owner` per le proprietà.
 - Si dichiara **una sola volta** ciascuna Object Property / Datatype Property. Le altre schede la richiamano senza ridichiarla.
 - Le cardinalità documentali devono essere specificate separatamente dagli assiomi OWL. La generazione degli Shape SHACL è una fase successiva.
 - I controlli obbligatori sono definiti come requisiti della prima implementazione; non si presume che il generatore attuale li implementi già.
-- Tutti gli esempi sono separati dai dati normativi e non contribuiscono alla generazione dei TTL.
+- Gli esempi applicativi e i relativi Turtle sono conservati fuori da questo documento, senza diventare sorgenti normative del vocabolario.
 
 ---
 
-## 4. Scheda ontologica — `ProcessTransition`
+## 4. Successioni dirette e rami dichiarati
 
-### 4.1 Identificazione e definizione
+La successione prevista tra Step è descritta da `ddta:hasNextStep` (CORE).
+Le due specializzazioni `process:hasTrueNextStep` e
+`process:hasFalseNextStep` qualificano le uscite binarie fra Step.
+Ogni relazione dichiara una successione prevista, non un evento eseguito.
 
-```yaml ddta-ontology
-record: class
-module: process
-iri: process:ProcessTransition
-status: approved
-label:
-  en: Process Transition
-  it: Transizione di processo
-definition:
-  en: >-
-    An identifiable planned direct flow connection between
-    two process steps, which may be qualified by a guard.
-    It does not represent an executed transition.
-  it: >-
-    Un collegamento diretto e pianificato tra due passi
-    di processo, eventualmente qualificato da una guardia.
-    Non rappresenta una transizione effettivamente eseguita.
-```
+I dettagli degli Step e la topologia dei rami sono dichiarati nei dati RDF;
+la guida grafica specifica esclusivamente la rappresentazione.
 
-### 4.2 Relazioni
-
-```yaml ddta-ontology
-record: object-properties
-module: process
-owner: process:ProcessTransition
-properties:
-  - iri: process:hasTransition
-    status: approved
-    domain: ddta:Process
-    range: process:ProcessTransition
-    label: {en: has transition, it: ha una transizione}
-    definition:
-      en: Relates a process to one of its planned transitions.
-      it: Collega un processo a una delle transizioni pianificate.
-  - iri: process:fromStep
-    status: approved
-    domain: process:ProcessTransition
-    range: ddta:ProcessStep
-    label: {en: from step, it: dal passo}
-    definition:
-      en: Identifies the source step of a transition.
-      it: Identifica il passo sorgente di una transizione.
-  - iri: process:toStep
-    status: approved
-    domain: process:ProcessTransition
-    range: ddta:ProcessStep
-    label: {en: to step, it: al passo}
-    definition:
-      en: Identifies the destination step of a transition.
-      it: Identifica il passo destinazione di una transizione.
-  - iri: process:hasGuard
-    status: approved
-    domain: process:ProcessTransition
-    range: process:Condition
-    label: {en: has guard, it: ha una guardia}
-    definition:
-      en: Relates a transition to the condition guarding its enablement.
-      it: Collega una transizione alla condizione che ne governa l'abilitazione.
-```
-
-Le relazioni `fromStep` e `toStep` hanno cardinalità documentale **1..1**; `hasGuard` **0..1** nel modello, così non resta ambiguo come combinare più guardie (per più condizioni si usa `CompositeCondition`). Una transizione appartiene a un solo processo proprietario tramite `hasTransition`; il processo dichiara gli Step con `ddta:hasStep`.
-
-**Compatibilità con il CORE:** una transizione `T` da `A` a `B` dettaglia `A ddta:hasNextStep B`. Il collegamento CORE è ricavabile mediante una proiezione SPARQL `CONSTRUCT`, **non automaticamente da OWL**. `hasNextStep` può essere presente anche senza una transizione specializzata; tale assenza non significa “senza guardia”.
-
-### 4.3 Interrogazioni SPARQL
-
-```sparql
-PREFIX ddta: <https://w3id.org/ddta/core#>
-PREFIX process: <https://w3id.org/ddta/process#>
-SELECT ?transition ?source ?destination ?guard
-WHERE {
-  ?process process:hasTransition ?transition .
-  ?transition process:fromStep ?source ; process:toStep ?destination .
-  OPTIONAL { ?transition process:hasGuard ?guard . }
-}
-```
-
-**Proiezione verso `hasNextStep`, da eseguire esplicitamente nel sistema di generazione/materializzazione:**
-
-```sparql
-PREFIX ddta: <https://w3id.org/ddta/core#>
-PREFIX process: <https://w3id.org/ddta/process#>
-CONSTRUCT { ?source ddta:hasNextStep ?destination . }
-WHERE {
-  ?p process:hasTransition ?t .
-  ?p ddta:hasStep ?source, ?destination .
-  ?t process:fromStep ?source ; process:toStep ?destination .
-}
-```
-
-### 4.4 Vincoli di validazione
-
-| ID | Requisito | Prima implementazione |
-|---|---|---|
-| `PRC-TRANS-01` | Per **ogni** Process che dichiara una transizione, sorgente e destinazione devono appartenere tramite `hasStep` a quel medesimo Process | **Obbligatorio** |
-| `PRC-TRANS-02` | Esattamente un `fromStep` e un `toStep` | **Obbligatorio** |
-| `PRC-TRANS-03` | Al massimo una guardia per transizione (eventuale combinazione tramite `CompositeCondition`) | **Obbligatorio** |
-| `PRC-TRANS-04` | Ogni transizione specializzata è dichiarata da un unico processo proprietario nel grafo validato | **Obbligatorio** |
-
-**Dichiarazione strutturata di validazione:**
-
-```yaml ontology-validation
-kind: OntologyValidation
-target: process:ProcessTransition
-engine: SHACL
-constraints:
-  - id: PRC-TRANS-02
-    type: property-count
-    properties:
-      - {path: process:fromStep, minCount: 1, maxCount: 1}
-      - {path: process:toStep, minCount: 1, maxCount: 1}
-  - id: PRC-TRANS-03
-    path: process:hasGuard
-    maxCount: 1
-```
-
-**`PRC-TRANS-01` richiede un controllo anche sui Process proprietari**, non soltanto sul singolo oggetto Transition. Esempio di query SHACL-SPARQL sulla shape `ddta:Process`:
-
-```sparql
-PREFIX ddta: <https://w3id.org/ddta/core#>
-PREFIX process: <https://w3id.org/ddta/process#>
-SELECT $this ?value
-WHERE {
-  $this process:hasTransition ?value .
-  FILTER NOT EXISTS {
-    ?value process:fromStep ?from ; process:toStep ?to .
-    $this ddta:hasStep ?from, ?to .
-  }
-}
-```
-
-Questa query segnala anche transizioni con estremità mancanti; il controllo di cardinalità fornisce la diagnostica specifica. La relazione proprietaria `hasTransition` deve essere univoca nel grafo documentato (`PRC-TRANS-04`), così una transizione non è accidentalmente condivisa fra processi differenti. La forma YAML del controllo SPARQL sarà consolidata insieme al generatore.
-
-**Vincoli sulla proprietà del processo e sull’unicità del proprietario:**
-
-```yaml ontology-validation
-kind: OntologyValidation
-target: ddta:Process
-engine: SHACL
-constraints:
-  - id: PRC-TRANS-01
-    type: sparql
-    message:
-      en: Transition endpoints must belong to the process declaring the transition.
-      it: Le estremità della transizione devono appartenere al processo che la dichiara.
-    select: |-
-      PREFIX ddta: <https://w3id.org/ddta/core#>
-      PREFIX process: <https://w3id.org/ddta/process#>
-      SELECT $this ?value
-      WHERE {
-        $this process:hasTransition ?value .
-        FILTER NOT EXISTS {
-          ?value process:fromStep ?source ; process:toStep ?target .
-          $this ddta:hasStep ?source, ?target .
-        }
-      }
-```
-
-```yaml ontology-validation
-kind: OntologyValidation
-target: process:ProcessTransition
-engine: SHACL
-constraints:
-  - id: PRC-TRANS-04
-    type: sparql
-    message:
-      en: A transition must have exactly one owning process.
-      it: Una transizione deve avere esattamente un processo proprietario.
-    select: |-
-      PREFIX process: <https://w3id.org/ddta/process#>
-      SELECT $this
-      WHERE {
-        { FILTER NOT EXISTS { ?owner process:hasTransition $this . } }
-        UNION
-        {
-          ?ownerA process:hasTransition $this .
-          ?ownerB process:hasTransition $this .
-          FILTER(?ownerA != ?ownerB)
-        }
-      }
-```
-
-### 4.5 Esempio illustrativo
-
-```mermaid
-flowchart LR
-  A["ValidateInput"] -->|"TransitionAB [valid]"| B["AnalyzeImage"]
-  A -->|"TransitionAC [not valid]"| C["EndProcess"]
-```
-
-```turtle
-@prefix ddta: <https://w3id.org/ddta/core#> .
-@prefix process: <https://w3id.org/ddta/process#> .
-@prefix ex: <https://example.org/ddta/process-example#> .
-ex:ExampleProcess a ddta:Process ;
-    ddta:hasStep ex:ValidateInput, ex:AnalyzeImage, ex:EndProcess ;
-    process:hasTransition ex:TransitionAB, ex:TransitionAC .
-ex:ValidateInput a ddta:ProcessStep .
-ex:AnalyzeImage a ddta:ProcessStep .
-ex:EndProcess a process:ControlNode ; process:controlKind "END_PROCESS" .
-ex:TransitionAB a process:ProcessTransition ;
-    process:fromStep ex:ValidateInput ; process:toStep ex:AnalyzeImage ;
-    process:hasGuard ex:InputValid .
-ex:TransitionAC a process:ProcessTransition ;
-    process:fromStep ex:ValidateInput ; process:toStep ex:EndProcess ;
-    process:hasGuard ex:InputInvalid .
-ex:InputValid a process:Condition .
-ex:InputInvalid a process:Condition .
-```
-
----
-
-## 5. Scheda ontologica — `Condition`
+## 5. Scheda ontologica — `AtomicCondition`
 
 ### 5.1 Identificazione e definizione
 
 ```yaml ddta-ontology
 record: class
 module: process
-iri: process:Condition
-status: approved
-label: {en: Condition, it: Condizione}
-definition:
-  en: >-
-    An identifiable criterion that can be evaluated to
-    determine whether a planned process behavior is enabled.
-    Its declaration does not assert its current truth value.
-  it: >-
-    Un criterio identificabile valutabile per determinare
-    se un comportamento previsto del processo è abilitato.
-    La dichiarazione non afferma il suo valore di verità attuale.
-```
-
-Una condizione possiede un **significato identificabile**: ad esempio `CandidateModelAcceptanceCriterion`. L'espressione valutativa e i parametri concreti non costituiscono necessariamente l'identità della condizione. Una modifica della soglia può cambiare il comportamento richiesto e deve restare tracciabile tramite specifica/configurazione.
-
-Non introduciamo una classe separata `ProcessTrigger` nella Process Ontology. Un evento e una condizione di stato non sono identici, ma un'attivazione descritta come criterio è sufficiente per questa versione; un'ontologia degli eventi potrà specializzare la distinzione.
-
-### 5.2 Relazioni
-
-```yaml ddta-ontology
-record: object-properties
-module: process
-owner: process:Condition
-properties:
-  - iri: process:hasActivationCondition
-    status: approved
-    domain:
-      unionOf: [ddta:Process, ddta:ProcessStep]
-    range: process:Condition
-    label: {en: has activation condition, it: ha condizione di attivazione}
-    definition:
-      en: Relates a process or step to its enabling criterion.
-      it: Collega un processo o passo al relativo criterio abilitante.
-```
-
-La proprietà **unica** `hasActivationCondition` è applicabile a `Process` e `ProcessStep`. Il dominio in OWL è una **unione**, non due `rdfs:domain` (che implicherebbero l'intersezione). Una condizione su una singola transizione usa invece `hasGuard` (sezione 4), perché una guardia riguarda uno specifico collegamento.
-
-L'assenza di condizioni dichiarate non significa che l'attivazione sia sempre permessa: indica soltanto che la specifica non ha aggiunto vincoli in questo modello. La distinzione fra `true`, `false` e `unknown` riguarda la **valutazione**, non l'identità ontologica del criterio.
-
-### 5.3 Interrogazioni SPARQL
-
-```sparql
-PREFIX process: <https://w3id.org/ddta/process#>
-PREFIX ex: <https://example.org/ddta/process-example#>
-SELECT DISTINCT ?condition WHERE {
-  ex:ExampleProcess process:hasActivationCondition ?condition .
-}
-```
-
-```sparql
-PREFIX process: <https://w3id.org/ddta/process#>
-PREFIX ex: <https://example.org/ddta/process-example#>
-SELECT DISTINCT ?transition WHERE {
-  ?transition process:hasGuard ex:ExampleCondition .
-}
-```
-
-### 5.4 Vincoli e interpretazione
-
-Cardinalità di `hasActivationCondition`: **0..1** per Process o ProcessStep nel modello; una composizione AND/OR/NOT si rappresenta mediante una `CompositeCondition`. Eventuali condizioni che non possono essere formalizzate sono ammesse come criteri documentati, ma non si dichiara che siano valutabili automaticamente.
-
-Per i requisiti funzionali espressi nei contratti, la condizione operativa può fare riferimento agli elementi contrattuali pertinenti, senza affermare che tutta la semantica del contratto sia già verificata automaticamente.
-
-**Validazione del criterio di attivazione (unica condizione per Process/Step):**
-
-```yaml ontology-validation
-kind: OntologyValidation
-target: ddta:Process
-engine: SHACL
-constraints:
-  - id: PRC-COND-01
-    type: property-count
-    properties:
-      - {path: process:hasActivationCondition, maxCount: 1}
-```
-
-```yaml ontology-validation
-kind: OntologyValidation
-target: ddta:ProcessStep
-engine: SHACL
-constraints:
-  - id: PRC-COND-02
-    type: property-count
-    properties:
-      - {path: process:hasActivationCondition, maxCount: 1}
-```
-
-### 5.5 Esempio illustrativo
-
-`ModelAdaptationProcess` è abilitabile quando il criterio `EnoughClinicalReviews` è soddisfatto. La dichiarazione non afferma che il processo sia stato avviato.
-
-```turtle
-@prefix ddta: <https://w3id.org/ddta/core#> .
-@prefix process: <https://w3id.org/ddta/process#> .
-@prefix ex: <https://example.org/ddta/process-example#> .
-ex:ModelAdaptationProcess a ddta:Process ;
-    process:hasActivationCondition ex:EnoughClinicalReviews .
-ex:EnoughClinicalReviews a process:Condition .
-```
-
----
-
-## 6. Scheda ontologica — `AtomicCondition`
-
-### 6.1 Identificazione e definizione
-
-```yaml ddta-ontology
-record: class
-module: process
 iri: process:AtomicCondition
 status: approved
-subClassOf: process:Condition
 label: {en: Atomic Condition, it: Condizione atomica}
 definition:
   en: >-
@@ -435,7 +104,7 @@ definition:
     fra operandi identificati semanticamente.
 ```
 
-### 6.2 Relazioni
+### 5.2 Relazioni
 
 ```yaml ddta-ontology
 record: object-properties
@@ -475,9 +144,9 @@ properties:
       it: Identificatore controllato dell'operazione di confronto.
 ```
 
-Operatori di confronto definiti: `EQ`, `NE`, `LT`, `LE`, `GT`, `GE`; ulteriori operatori richiederanno una definizione semantica esplicita. Un criterio non riconducibile a un confronto binario resta documentabile come `Condition` generale: **non inventiamo un'espressione formalmente valutabile dove manca la semantica**.
+Operatori di confronto definiti: `EQ`, `NE`, `LT`, `LE`, `GT`, `GE`; ulteriori operatori richiederanno una definizione semantica esplicita. Se il confronto non è ancora formalizzato, si documenta lo Step o il `ControlNode` senza attribuirgli un criterio `AtomicCondition` fittizio.
 
-### 6.3 Interrogazione SPARQL
+### 5.3 Interrogazione SPARQL
 
 ```sparql
 PREFIX process: <https://w3id.org/ddta/process#>
@@ -489,7 +158,7 @@ SELECT ?condition ?left ?op ?right WHERE {
 }
 ```
 
-### 6.4 Vincoli
+### 5.4 Vincoli
 
 Cardinalità documentale **1..1** per ciascun operando e per `comparisonOperator` quando un individuo è classificato come `AtomicCondition`; valori dell'operatore limitati all'insieme controllato. Si tratta di **validazioni SHACL**, non di assiomi che determinano la verità del predicato.
 
@@ -519,157 +188,9 @@ constraints:
       }
 ```
 
-### 6.5 Esempio illustrativo
+## 6. Scheda ontologica — `Operand`
 
-`CandidateAccuracyAcceptable` descrive `CandidateAccuracy >= MinimumRequiredAccuracy`. La soglia numerica non viene incorporata nell'identità della condizione.
-
-```turtle
-@prefix process: <https://w3id.org/ddta/process#> .
-@prefix ex: <https://example.org/ddta/process-example#> .
-ex:CandidateAccuracyAcceptable a process:AtomicCondition ;
-    process:hasLeftOperand ex:CandidateAccuracyOperand ;
-    process:comparisonOperator "GE" ;
-    process:hasRightOperand ex:RequiredAccuracyOperand .
-```
-
----
-
-## 7. Scheda ontologica — `CompositeCondition`
-
-### 7.1 Identificazione e definizione
-
-```yaml ddta-ontology
-record: class
-module: process
-iri: process:CompositeCondition
-status: approved
-subClassOf: process:Condition
-label: {en: Composite Condition, it: Condizione composta}
-definition:
-  en: >-
-    A condition combining other conditions by a declared
-    Boolean operator, without recording their actual evaluation.
-  it: >-
-    Una condizione che combina altre condizioni mediante
-    un operatore booleano dichiarato, senza registrare
-    il risultato della loro valutazione effettiva.
-```
-
-### 7.2 Relazioni
-
-```yaml ddta-ontology
-record: object-properties
-module: process
-owner: process:CompositeCondition
-properties:
-  - iri: process:hasCondition
-    status: approved
-    domain: process:CompositeCondition
-    range: process:Condition
-    label: {en: has condition, it: comprende una condizione}
-    definition:
-      en: Relates a composite condition to a directly included condition.
-      it: Collega una condizione composta a una condizione inclusa direttamente.
-```
-
-```yaml ddta-ontology
-record: datatype-properties
-module: process
-owner: process:CompositeCondition
-properties:
-  - iri: process:logicalOperator
-    status: approved
-    domain: process:CompositeCondition
-    range: xsd:string
-    label: {en: logical operator, it: operatore logico}
-    definition:
-      en: Boolean combination operator of a composite condition.
-      it: Operatore di combinazione booleana di una condizione composta.
-```
-
-Operatori previsti: `AND`, `OR`, `NOT`. `NOT` richiede esattamente una condizione componente; `AND` e `OR` richiedono almeno due componenti. La struttura delle condizioni composte deve essere **aciclica**. `hasCondition` non è transitiva.
-
-### 7.3 Interrogazioni SPARQL
-
-```sparql
-PREFIX process: <https://w3id.org/ddta/process#>
-SELECT ?composite ?operator ?member WHERE {
-  ?composite a process:CompositeCondition ;
-      process:logicalOperator ?operator ;
-      process:hasCondition ?member .
-}
-```
-
-### 7.4 Vincoli
-
-Controlli SHACL richiesti: un `logicalOperator`, numero di componenti coerente con l'operatore e assenza di cicli su `hasCondition+`. Le condizioni possono includere altre condizioni composte, senza imporre un limite universale alla profondità.
-
-**Controlli documentali:**
-
-```yaml ontology-validation
-kind: OntologyValidation
-target: process:CompositeCondition
-engine: SHACL
-constraints:
-  - id: PRC-COMP-COND-01
-    type: property-count
-    properties:
-      - {path: process:logicalOperator, minCount: 1, maxCount: 1}
-  - id: PRC-COMP-COND-02
-    type: sparql
-    message:
-      en: Condition composition contains a cycle.
-      it: La composizione delle condizioni contiene un ciclo.
-    select: |-
-      PREFIX process: <https://w3id.org/ddta/process#>
-      SELECT $this WHERE { $this process:hasCondition+ $this . }
-  - id: PRC-COMP-COND-03
-    type: sparql
-    message:
-      en: Boolean operator and number of component conditions are incompatible.
-      it: Operatore booleano e numero di condizioni componenti non compatibili.
-    select: |-
-      PREFIX process: <https://w3id.org/ddta/process#>
-      SELECT $this WHERE {
-        $this process:logicalOperator ?op .
-        {
-          SELECT $this (COUNT(DISTINCT ?part) AS ?members)
-          WHERE { OPTIONAL { $this process:hasCondition ?part . } }
-          GROUP BY $this
-        }
-        FILTER(
-          ?op NOT IN ("AND", "OR", "NOT") ||
-          (?op = "NOT" && ?members != 1) ||
-          (?op IN ("AND", "OR") && ?members < 2)
-        )
-      }
-```
-
-### 7.5 Esempio illustrativo
-
-```mermaid
-flowchart TB
-  A["CandidateAdoptionPermitted<br/>CompositeCondition: AND"]
-  B["AccuracyAcceptable<br/>AtomicCondition"]
-  C["ValidationPassed<br/>Condition"]
-  A -->|"hasCondition"| B
-  A -->|"hasCondition"| C
-```
-
-```turtle
-@prefix process: <https://w3id.org/ddta/process#> .
-@prefix ex: <https://example.org/ddta/process-example#> .
-ex:CandidateAdoptionPermitted a process:CompositeCondition ;
-    process:logicalOperator "AND" ;
-    process:hasCondition ex:CandidateAccuracyAcceptable, ex:ValidationPassed .
-ex:ValidationPassed a process:Condition .
-```
-
----
-
-## 8. Scheda ontologica — `Operand`
-
-### 8.1 Identificazione e definizione
+### 6.1 Identificazione e definizione
 
 ```yaml ddta-ontology
 record: class
@@ -691,7 +212,7 @@ definition:
 
 `Operand` **non** è sottoclasse di `ddta:ContractElement`: quest'ultimo rappresenta un elemento richiesto o ammesso da un contratto; l'operando rappresenta il suo **ruolo nell'espressione**. Un riferimento a un elemento contrattuale non ne crea un duplicato e non prova che il processo produca effettivamente un valore conforme.
 
-### 8.2 Relazioni
+### 6.2 Relazioni
 
 ```yaml ddta-ontology
 record: object-properties
@@ -741,7 +262,7 @@ properties:
 
 **Disciplina dei riferimenti.** Un operando può riferirsi a un elemento contrattuale, a un valore di configurazione, a uno stato operativo o a una costante. Per una condizione automaticamente valutabile è necessario che il riferimento sia risolvibile e abbia semantica e tipo del valore noti. `valueLocator` non è un linguaggio di query standardizzato: la sua sintassi e interpretazione appartengono alla specializzazione o al valutatore, non sono inferite dall’ontologia. Non viene inferita una variabile di codice a partire dal nome di un `ContractElement`.
 
-### 8.3 Interrogazione SPARQL
+### 6.3 Interrogazione SPARQL
 
 ```sparql
 PREFIX process: <https://w3id.org/ddta/process#>
@@ -754,30 +275,13 @@ SELECT ?operand ?contractElement ?resource ?locator ?literal WHERE {
 }
 ```
 
-### 8.4 Vincoli
+### 6.4 Vincoli
 
 Un operando per cui è prevista una valutazione automatica deve avere un meccanismo di risoluzione non ambiguo. La mutua esclusione esatta tra `literalValue` e riferimenti esterni, nonché la tipizzazione e la semantica di `valueLocator`, sono criteri che richiedono un valutatore specializzato e non costituiscono vincoli SHACL universali. Non imponiamo ora che ogni `Operand` sia esclusivamente un letterale o esclusivamente un riferimento, perché alcuni parametri possono avere valore predefinito e riferimento configurabile.
 
-### 8.5 Esempio illustrativo
+## 7. Scheda ontologica — `ControlNode`
 
-```turtle
-@prefix ddta: <https://w3id.org/ddta/core#> .
-@prefix process: <https://w3id.org/ddta/process#> .
-@prefix ex: <https://example.org/ddta/process-example#> .
-ex:CandidateAccuracyOperand a process:Operand ;
-    process:referencesContractElement ex:CandidateAccuracyElement .
-ex:RequiredAccuracyOperand a process:Operand ;
-    process:referencesResource ex:EvaluationSettings ;
-    process:valueLocator "minimum_required_accuracy" .
-ex:CandidateAccuracyElement a ddta:ContractElement .
-ex:EvaluationSettings a ddta:Resource .
-```
-
----
-
-## 9. Scheda ontologica — `ControlNode`
-
-### 9.1 Identificazione e definizione
+### 7.1 Identificazione e definizione
 
 ```yaml ddta-ontology
 record: class
@@ -795,7 +299,7 @@ definition:
     il flusso previsto anziché rappresentare un'attività applicativa.
 ```
 
-### 9.2 Relazioni
+### 7.2 Relazioni
 
 ```yaml ddta-ontology
 record: datatype-properties
@@ -812,18 +316,101 @@ properties:
       it: Identificatore controllato del comportamento di un nodo di controllo.
 ```
 
-Valori controllati: `XOR_SPLIT`, `XOR_MERGE`, `CONCURRENT_SPLIT`, `WAIT`, `END_BRANCH`, `END_PROCESS`. `SynchronizationNode` rappresenta invece un controllo specializzato di ricongiungimento. `CONTINUE` non richiede un nodo dedicato: è rappresentabile tramite normale transizione.
+#### Scelta binaria e successioni condizionate
+
+Le seguenti proprietà rendono esplicite nel TTL le due uscite di una decisione binaria. La sottoproprietà assicura che ogni ramo sia anche una successione CORE, senza duplicare nell'authoring una tripla `ddta:hasNextStep`. La relazione al criterio è facoltativa: il nodo può essere dichiarato prima di formalizzare il confronto.
+
+```yaml ddta-ontology
+record: object-properties
+module: process
+owner: process:ControlNode
+properties:
+  - iri: process:hasTrueNextStep
+    status: approved
+    subPropertyOf: ddta:hasNextStep
+    domain: process:ControlNode
+    range: ddta:ProcessStep
+    label: {en: has true next step, it: passo successivo sul vero}
+    definition: {en: Successor selected by the true outcome of the control criterion., it: Successore scelto dall'esito vero del criterio del controllo.}
+  - iri: process:hasFalseNextStep
+    status: approved
+    subPropertyOf: ddta:hasNextStep
+    domain: process:ControlNode
+    range: ddta:ProcessStep
+    label: {en: has false next step, it: passo successivo sul falso}
+    definition: {en: Successor selected by the false outcome of the control criterion., it: Successore scelto dall'esito falso del criterio del controllo.}
+  - iri: process:evaluatesCondition
+    status: approved
+    domain: process:ControlNode
+    range: process:AtomicCondition
+    label: {en: evaluates condition, it: valuta condizione}
+    definition: {en: Identifies the optional atomic criterion evaluated by a decision control., it: Identifica il criterio atomico facoltativamente valutato da un controllo decisionale.}
+```
+
+**Validazione documentale:** al massimo un successore TRUE e uno FALSE per un controllo binario; entrambi devono appartenere allo stesso processo che dichiara il controllo; `evaluatesCondition` 0..1. L’esito previsto da ciascuna relazione non documenta un’esecuzione reale. La scelta TRUE/FALSE è compatibile con `ddta:hasNextStep` tramite `rdfs:subPropertyOf`; richiede inferenza RDFS o proiezione esplicita quando si interroga il CORE.
+
+#### Partecipanti e criteri di completamento del controllo composto
+
+Un `ControlNode` con `controlKind` `CONCURRENT_SPLIT` può rappresentare un blocco composto: identifica esplicitamente gli Step partecipanti e la condizione che abilita la continuazione. I partecipanti rimangono `ddta:ProcessStep` con identità RDF distinta, input/output e risorse implementative. `hasParticipantStep` indica partecipazione, **non** successione né trasferimento di dati. Il blocco è preceduto e seguito mediante `ddta:hasNextStep`.
+
+```yaml ddta-ontology
+record: object-properties
+module: process
+owner: process:ControlNode
+properties:
+  - iri: process:hasParticipantStep
+    status: approved
+    domain: process:ControlNode
+    range: ddta:ProcessStep
+    label: {en: has participant step, it: ha step partecipante}
+    definition:
+      en: Identifies one direct process step coordinated by a compound control without asserting step order or data transfer.
+      it: Identifica uno Step coordinato dal controllo composto, senza asserirne l'ordine o un trasferimento di dati.
+```
+
+```yaml ddta-ontology
+record: datatype-properties
+module: process
+owner: process:ControlNode
+properties:
+  - iri: process:joinPolicy
+    status: approved
+    domain: process:ControlNode
+    range: xsd:string
+    label: {en: join policy, it: politica di sincronizzazione}
+    definition:
+      en: >-
+        Completion rule ALL, ANY or N_OF_M over the declared participant steps.
+      it: >-
+        Regola di completamento ALL, ANY o N_OF_M sugli Step partecipanti dichiarati.
+  - iri: process:requiredCount
+    status: approved
+    domain: process:ControlNode
+    range: xsd:positiveInteger
+    label: {en: required count, it: numero richiesto}
+    definition: {en: Minimum number of eligible participants needed by N_OF_M., it: Numero minimo di partecipanti idonei richiesto da N_OF_M.}
+  - iri: process:completionCriterion
+    status: approved
+    domain: process:ControlNode
+    range: xsd:string
+    label: {en: completion criterion, it: criterio di completamento}
+    definition: {en: Eligible completion condition SUCCESS or TERMINATED., it: Criterio di completamento valido SUCCESS o TERMINATED.}
+```
+
+Le regole `ALL`, `ANY` e `N_OF_M` si applicano agli Step dichiarati con `hasParticipantStep`. Nel caso `N_OF_M`, `requiredCount` è obbligatorio, con `1 <= N <= M` e `M` uguale al numero di partecipanti RDF distinti. In `ALL` e `ANY` non si dichiara `requiredCount`. Nessuna politica di cancellazione, attesa o gestione tardiva di altri partecipanti viene inferita.
+
+Valori controllati: `XOR_SPLIT`, `XOR_MERGE`, `CONCURRENT_SPLIT`, `WAIT`, `END_BRANCH`, `END_PROCESS`. Un controllo concorrente può includere una regola di completamento sugli Step partecipanti. La prosecuzione prevista si dichiara mediante `ddta:hasNextStep`.
 
 **Semantica da preservare:**
 
-- `XOR_SPLIT`: abilita **una sola** alternativa scelta secondo guardie o regola di selezione esplicita; guardie sovrapposte o nessuna guardia soddisfatta richiedono una politica documentata.
+- `XOR_SPLIT`: seleziona un ramo in base a un criterio documentato; per una scelta booleana il ramo può essere identificato direttamente con `hasTrueNextStep` e `hasFalseNextStep`.
 - `XOR_MERGE`: ricongiunge percorsi alternativi senza introdurre una barriera che attenda rami non selezionati.
 - `CONCURRENT_SPLIT`: abilita più rami logicamente indipendenti; non afferma esecuzione simultanea fisica.
 - `WAIT`: rappresenta una sospensione prevista fino a una condizione di prosecuzione; non registra lo stato attuale di un'esecuzione.
 - `END_BRANCH`: termina il ramo logico rappresentato; non implica la terminazione di tutti gli altri rami.
 - `END_PROCESS`: prescrive la terminazione del processo descritto secondo la semantica della futura esecuzione; **non certifica** che worker in corso siano già stati fisicamente interrotti.
 
-### 9.3 Interrogazione SPARQL
+### 7.3 Interrogazione SPARQL
 
 ```sparql
 PREFIX process: <https://w3id.org/ddta/process#>
@@ -832,11 +419,11 @@ SELECT ?node ?kind WHERE {
 }
 ```
 
-### 9.4 Vincoli
+### 7.4 Vincoli
 
-Un `ControlNode` ordinario deve avere esattamente un `controlKind` riconosciuto. Per `SynchronizationNode` il tipo di controllo è definito tramite `joinPolicy`, senza imporre anche `controlKind`. La coerenza tra tipo di controllo e numero di ingressi/uscite sarà soggetta a SHACL e, per aspetti dinamici, a verifica del flusso. Non si impone che ogni `ProcessStep` sia un nodo di controllo.
+Un `ControlNode` deve avere esattamente un `controlKind` riconosciuto; il controllo composto di partecipanti conserva `controlKind` `CONCURRENT_SPLIT` e può dichiarare `joinPolicy`. La coerenza tra tipo di controllo e numero di ingressi/uscite sarà soggetta a SHACL e, per aspetti dinamici, a verifica del flusso. Non si impone che ogni `ProcessStep` sia un nodo di controllo.
 
-**Controllo del tipo per nodi non specializzati come join:**
+**Controllo del tipo per ogni `ControlNode`:**
 
 ```yaml ontology-validation
 kind: OntologyValidation
@@ -846,12 +433,11 @@ constraints:
   - id: PRC-CTRL-01
     type: sparql
     message:
-      en: Non-synchronization control nodes need one recognized control kind.
-      it: I nodi di controllo non di sincronizzazione richiedono un tipo riconosciuto.
+      en: Each control node needs exactly one recognized control kind.
+      it: Ogni nodo di controllo richiede esattamente un tipo riconosciuto.
     select: |-
       PREFIX process: <https://w3id.org/ddta/process#>
       SELECT $this WHERE {
-        FILTER NOT EXISTS { $this a process:SynchronizationNode . }
         {
           FILTER NOT EXISTS { $this process:controlKind ?kind . }
         } UNION {
@@ -866,195 +452,140 @@ constraints:
       }
 ```
 
-Il nodo ordinario deve possedere **esattamente un** `controlKind`; l'insieme dei valori ammissibili è elencato nella scheda. La specializzazione `SynchronizationNode` utilizza invece `joinPolicy` senza obbligo di `controlKind`.
+Il nodo ordinario deve possedere **esattamente un** `controlKind`; l'insieme dei valori ammissibili è elencato nella scheda. Il controllo composto utilizza anche `joinPolicy`, ma continua a richiedere `controlKind` come gli altri `ControlNode`.
 
-### 9.5 Esempio illustrativo
+#### Validazioni di rami e controlli concorrenti
 
-```mermaid
-flowchart TB
-  A["ValidateCase"] --> X{"XOR_SPLIT"}
-  X -->|"image present"| B["AnalyzeImage"]
-  X -->|"image absent"| C["SkipImage"]
-  B --> M["XOR_MERGE"]
-  C --> M
-  M --> D["Continue"]
-```
-
----
-
-## 10. Scheda ontologica — `SynchronizationNode`
-
-### 10.1 Identificazione e definizione
-
-```yaml ddta-ontology
-record: class
-module: process
-iri: process:SynchronizationNode
-status: approved
-subClassOf: process:ControlNode
-label: {en: Synchronization Node, it: Nodo di sincronizzazione}
-definition:
-  en: >-
-    A control node that enables a continuation according
-    to a declared rule over completion of participating branches,
-    independently of physical parallel execution.
-  it: >-
-    Un nodo di controllo che abilita una prosecuzione secondo
-    una regola dichiarata sul completamento dei rami partecipanti,
-    indipendentemente dall'esecuzione fisicamente parallela.
-```
-
-### 10.2 Proprietà
-
-```yaml ddta-ontology
-record: datatype-properties
-module: process
-owner: process:SynchronizationNode
-properties:
-  - iri: process:joinPolicy
-    status: approved
-    domain: process:SynchronizationNode
-    range: xsd:string
-    label: {en: join policy, it: politica di sincronizzazione}
-    definition:
-      en: Synchronization rule ALL, ANY or N_OF_M.
-      it: Regola di sincronizzazione ALL, ANY o N_OF_M.
-  - iri: process:requiredCount
-    status: approved
-    domain: process:SynchronizationNode
-    range: xsd:positiveInteger
-    label: {en: required count, it: numero richiesto}
-    definition:
-      en: Minimum count of eligible completed branches for N_OF_M.
-      it: Numero minimo di rami completati ammissibili per N_OF_M.
-  - iri: process:completionCriterion
-    status: approved
-    domain: process:SynchronizationNode
-    range: xsd:string
-    label: {en: completion criterion, it: criterio di completamento}
-    definition:
-      en: Declares which kind of branch completion contributes to the threshold.
-      it: Dichiara quale genere di completamento di ramo contribuisce alla soglia.
-```
-
-Politiche previste: `ALL`, `ANY`, `N_OF_M`; criteri iniziali: `TERMINATED`, `SUCCESS`. Gli archi `ProcessTransition` in ingresso identificano **i rami partecipanti** al join. `M` è il numero dei partecipanti identificati nel grafo documentato; `N` è `requiredCount` nel caso `N_OF_M`, con `1 <= N <= M`.
-
-Per `ALL` non serve `requiredCount` (`N=M`); per `ANY` non serve `requiredCount` (`N=1`). Per `N_OF_M` è obbligatorio. Un ramo non viene contato più volte nella medesima istanza logica della sincronizzazione; la semantica della valutazione di cicli e delle singole esecuzioni appartiene a un ulteriore livello di modellazione.
-
-**Non attribuiamo una politica implicita ai rami residui.** La soglia raggiunta significa che la continuazione è abilitabile; l'eventuale terminazione di rami, cancellazione, attesa o gestione dei risultati tardivi richiede attività o regole esplicite. `END_BRANCH` e `END_PROCESS` sono controlli di flusso, non stati osservati di un'esecuzione.
-
-### 10.3 Interrogazione SPARQL
-
-```sparql
-PREFIX process: <https://w3id.org/ddta/process#>
-SELECT ?join ?policy ?n (COUNT(DISTINCT ?transition) AS ?m)
-WHERE {
-  ?join a process:SynchronizationNode ; process:joinPolicy ?policy .
-  OPTIONAL { ?join process:requiredCount ?n . }
-  OPTIONAL { ?transition process:toStep ?join . }
-}
-GROUP BY ?join ?policy ?n
-```
-
-### 10.4 Vincoli SHACL previsti
-
-| ID | Controllo |
-|---|---|
-| `PRC-SYNC-01` | Politica presente e appartenente all'insieme ALL, ANY, N_OF_M |
-| `PRC-SYNC-02` | `requiredCount` obbligatorio e positivo soltanto per N_OF_M |
-| `PRC-SYNC-03` | `requiredCount <= M`, con M numero di transizioni partecipanti in ingresso; M >= 1 |
-| `PRC-SYNC-04` | `completionCriterion` esplicito, limitato ai valori controllati |
-| `PRC-SYNC-05` | Un join appartiene al processo che dichiara le relative transizioni, nel rispetto di `PRC-TRANS-01` |
-
-SHACL può verificare cardinalità e coerenza dei riferimenti **nel grafo documentato**. La correttezza dei percorsi in presenza di cicli, diramazioni alternative o completion multiple richiede analisi ulteriori; non dichiariamo che `N_OF_M` sia eseguibile automaticamente solo in virtù del TTL.
-
-**Dichiarazioni documentali:**
+Le verifiche agiscono sul grafo RDF documentale (senza inferenza RDFS
+che aggiungerebbe materialmente le sottoproprietà a `hasNextStep`).
+La mancanza di un ramo o una condizione in una scheda ancora parziale
+non è automaticamente una violazione, salvo che la semantica XOR sia già
+stata dichiarata mediante una delle due uscite.
 
 ```yaml ontology-validation
 kind: OntologyValidation
-target: process:SynchronizationNode
+target: process:ControlNode
 engine: SHACL
 constraints:
-  - id: PRC-SYNC-01
+  - id: PRC-CTRL-02
     type: property-count
     properties:
-      - {path: process:joinPolicy, minCount: 1, maxCount: 1}
-  - id: PRC-SYNC-04
-    type: property-count
-    properties:
-      - {path: process:completionCriterion, minCount: 1, maxCount: 1}
-  - id: PRC-SYNC-02
+      - {path: process:hasTrueNextStep, maxCount: 1}
+      - {path: process:hasFalseNextStep, maxCount: 1}
+      - {path: process:evaluatesCondition, maxCount: 1}
+  - id: PRC-CTRL-03
     type: sparql
     message:
-      en: N-of-M requires one positive count; other policies do not use it.
-      it: N-of-M richiede un numero positivo; le altre politiche non lo utilizzano.
+      en: Declared binary branches must be paired and belong to an XOR_SPLIT control.
+      it: I rami binari dichiarati devono essere entrambi presenti e appartenere a un XOR_SPLIT.
     select: |-
       PREFIX process: <https://w3id.org/ddta/process#>
       SELECT $this WHERE {
-        $this process:joinPolicy ?policy .
-        OPTIONAL { $this process:requiredCount ?count . }
-        FILTER(
-          (?policy = "N_OF_M" && (!BOUND(?count) || ?count < 1)) ||
-          (?policy IN ("ALL", "ANY") && BOUND(?count)) ||
-          ?policy NOT IN ("ALL", "ANY", "N_OF_M")
+        {
+          $this process:hasTrueNextStep ?target .
+          FILTER NOT EXISTS { $this process:hasFalseNextStep ?other . }
+        } UNION {
+          $this process:hasFalseNextStep ?target .
+          FILTER NOT EXISTS { $this process:hasTrueNextStep ?other . }
+        } UNION {
+          $this (process:hasTrueNextStep|process:hasFalseNextStep) ?target .
+          FILTER NOT EXISTS { $this process:controlKind "XOR_SPLIT" . }
+        }
+      }
+  - id: PRC-CTRL-04
+    type: sparql
+    message:
+      en: A declared branch successor must belong directly to the same Process.
+      it: Il successore di ramo dichiarato deve appartenere direttamente allo stesso Process.
+    select: |-
+      PREFIX process: <https://w3id.org/ddta/process#>
+      PREFIX ddta: <https://w3id.org/ddta/core#>
+      SELECT $this ?value WHERE {
+        $this (process:hasTrueNextStep|process:hasFalseNextStep) ?value .
+        FILTER NOT EXISTS { ?p ddta:hasStep $this ; ddta:hasStep ?value . }
+      }
+  - id: PRC-SYNC-01
+    type: sparql
+    message:
+      en: A concurrent control must have participants, completion policy and criterion.
+      it: Un controllo concorrente deve dichiarare partecipanti, regola e criterio di completamento.
+    select: |-
+      PREFIX process: <https://w3id.org/ddta/process#>
+      SELECT $this WHERE {
+        $this process:controlKind "CONCURRENT_SPLIT" .
+        FILTER (
+          NOT EXISTS { $this process:hasParticipantStep ?p . } ||
+          NOT EXISTS { $this process:joinPolicy ?policy . } ||
+          NOT EXISTS { $this process:completionCriterion ?criterion . }
         )
+      }
+  - id: PRC-SYNC-02
+    type: sparql
+    message:
+      en: Synchronization policy or completion criterion has an unsupported value.
+      it: La regola di sincronizzazione o il criterio di completamento non è riconosciuto.
+    select: |-
+      PREFIX process: <https://w3id.org/ddta/process#>
+      SELECT $this WHERE {
+        { $this process:joinPolicy ?policy . FILTER(?policy NOT IN ("ALL", "ANY", "N_OF_M")) }
+        UNION
+        { $this process:completionCriterion ?criterion . FILTER(?criterion NOT IN ("SUCCESS", "TERMINATED")) }
       }
   - id: PRC-SYNC-03
     type: sparql
     message:
-      en: The N-of-M threshold exceeds incoming participating transitions.
-      it: La soglia N-of-M supera le transizioni partecipanti in ingresso.
+      en: N_OF_M needs a valid positive count; ALL/ANY must not declare one.
+      it: N_OF_M richiede un conteggio valido; ALL/ANY non devono dichiararlo.
     select: |-
-      PREFIX ddta: <https://w3id.org/ddta/core#>
       PREFIX process: <https://w3id.org/ddta/process#>
       SELECT $this WHERE {
         $this process:joinPolicy ?policy .
-        OPTIONAL { $this process:requiredCount ?required . }
         {
-          SELECT $this (COUNT(DISTINCT ?transition) AS ?participants)
-          WHERE {
-            OPTIONAL {
-              ?owner ddta:hasStep $this ;
-                     process:hasTransition ?transition .
-              ?transition process:toStep $this .
-            }
-          }
-          GROUP BY $this
+          FILTER(?policy = "N_OF_M")
+          FILTER NOT EXISTS { $this process:requiredCount ?n . FILTER(?n >= 1) }
+        } UNION {
+          FILTER(?policy IN ("ALL", "ANY"))
+          $this process:requiredCount ?n .
         }
-        FILTER(?participants < 1 ||
-          (?policy = "N_OF_M" && BOUND(?required) && ?required > ?participants))
       }
+  - id: PRC-SYNC-04
+    type: property-count
+    properties:
+      - {path: process:joinPolicy, maxCount: 1}
+      - {path: process:completionCriterion, maxCount: 1}
+      - {path: process:requiredCount, maxCount: 1}
+  - id: PRC-SYNC-05
+    type: sparql
+    message:
+      en: Every concurrent participant must be a direct Step of the same Process.
+      it: Ogni partecipante concorrente deve essere uno Step diretto dello stesso Process.
+    select: |-
+      PREFIX process: <https://w3id.org/ddta/process#>
+      PREFIX ddta: <https://w3id.org/ddta/core#>
+      SELECT $this ?value WHERE {
+        $this process:hasParticipantStep ?value .
+        FILTER(?value = $this || NOT EXISTS { ?p ddta:hasStep $this ; ddta:hasStep ?value . })
+      }
+  - id: PRC-SYNC-06
+    type: sparql
+    message:
+      en: N_OF_M requiredCount cannot exceed distinct participant count.
+      it: Il conteggio N_OF_M non può superare il numero di partecipanti distinti.
+    select: |-
+      PREFIX process: <https://w3id.org/ddta/process#>
+      SELECT $this WHERE {
+        $this process:joinPolicy "N_OF_M" ; process:requiredCount ?n .
+        OPTIONAL { $this process:hasParticipantStep ?member . }
+      }
+      GROUP BY $this ?n
+      HAVING (?n > COUNT(DISTINCT ?member))
 ```
 
-La validazione del vocabolario di `completionCriterion` (`TERMINATED` / `SUCCESS`) e del tipo dei numeri (`xsd:positiveInteger`) è obbligatoria, anche qualora sia implementata da vincoli di datatype o da regole di validazione aggiuntive. `PRC-SYNC-05` deriva dai controlli di appartenenza `PRC-TRANS-01` e `PRC-COMP-02` sul proprietario dello Step di join.
+**Controllo supplementare:** `PRC-SYNC-06` verifica il limite N/M mediante il conteggio dei partecipanti distinti. La conformità degli Shape resta da verificare con un motore SHACL indipendente prima della promozione normativa.
 
-### 10.5 Esempio illustrativo
+## 8. Scheda ontologica — `CodeReference`
 
-```mermaid
-flowchart TB
-  F["CONCURRENT_SPLIT"] --> A["WorkerA"]
-  F --> B["WorkerB"]
-  F --> C["WorkerC"]
-  A --> J{"N_OF_M: 2/3"}
-  B --> J
-  C --> J
-  J --> D["AggregateResults"]
-```
-
-```turtle
-@prefix process: <https://w3id.org/ddta/process#> .
-@prefix ex: <https://example.org/ddta/process-example#> .
-ex:JoinTwoOfThree a process:SynchronizationNode ;
-    process:joinPolicy "N_OF_M" ;
-    process:requiredCount 2 ;
-    process:completionCriterion "SUCCESS" .
-```
-
----
-
-## 11. Scheda ontologica — `CodeReference`
-
-### 11.1 Identificazione e definizione
+### 8.1 Identificazione e definizione
 
 ```yaml ddta-ontology
 record: class
@@ -1076,7 +607,7 @@ definition:
 
 `CodeReference` **non** è sottoclasse di `ddta:Resource`. Distinguere la navigazione del sorgente dall'implementazione effettiva è essenziale: codice in un repository, artefatto distribuibile, servizio attivo e configurazione possono essere entità differenti; il riferimento al sorgente non dimostra quale build o istanza sia stata eseguita.
 
-### 11.2 Relazioni
+### 8.2 Relazioni
 
 ```yaml ddta-ontology
 record: object-properties
@@ -1161,7 +692,7 @@ properties:
 
 `hasCodeReference` e `implementedBy` **non implicano l'una l'altra**. `usesConfiguration` riguarda la risorsa che parametrizza il comportamento. Gli identificatori dei file non richiedono la modellazione delle chiamate tra simboli. Una futura **DDTA Code Ontology** potrà approfondire file, classi, metodi, build, dipendenze e deployment senza modificare questa identità.
 
-### 11.3 Interrogazioni SPARQL
+### 8.3 Interrogazioni SPARQL
 
 ```sparql
 PREFIX process: <https://w3id.org/ddta/process#>
@@ -1173,42 +704,13 @@ SELECT ?activity ?ref ?path ?symbol ?revision WHERE {
 }
 ```
 
-### 11.4 Vincoli
+### 8.4 Vincoli
 
 Per un riferimento di codice navigabile, `repositoryLocator` e `sourcePath` dovrebbero essere valorizzati; `symbolIdentifier` è facoltativo per il file intero, mentre una categoria `method` o `function` richiede la localizzazione del simbolo. Una revisione specifica è raccomandata per analisi riproducibili, ma non obbligatoria universalmente. Le regole precise su identificatori, URI, linguaggio e versioni saranno definite dalla futura Code Ontology.
 
-### 11.5 Esempio illustrativo
+## 9. Estensione delle classi CORE — composizione e richiamo dei processi
 
-```mermaid
-flowchart TB
-  P["ImageAnalysisProcess"] -->|"hasStep"| S["PredictStep"]
-  S -->|"hasCodeReference"| R["CodeReference: predictor.py::ImageAnalyzer.predict"]
-  S -->|"implementedBy"| W["ImageAnalysisService / Resource"]
-  S -->|"usesConfiguration"| C["model_config.yaml / Resource"]
-```
-
-```turtle
-@prefix ddta: <https://w3id.org/ddta/core#> .
-@prefix process: <https://w3id.org/ddta/process#> .
-@prefix ex: <https://example.org/ddta/process-example#> .
-ex:PredictStep a ddta:ProcessStep ;
-    process:hasCodeReference ex:PredictCodeRef ;
-    process:implementedBy ex:ImageAnalysisService ;
-    process:usesConfiguration ex:ModelConfiguration .
-ex:PredictCodeRef a process:CodeReference ;
-    process:repositoryLocator "documentation-driven-threat-analysis" ;
-    process:sourcePath "src/pipeline/predictor.py" ;
-    process:symbolIdentifier "ImageAnalyzer.predict" ;
-    process:codeElementKind "method" .
-ex:ImageAnalysisService a ddta:Resource .
-ex:ModelConfiguration a ddta:Resource .
-```
-
----
-
-## 12. Scheda ontologica — composizione e richiamo dei processi
-
-### 12.1 Identificazione e definizione
+### 9.1 Identificazione e definizione
 
 La composizione strutturale è distinta dall'attivazione prevista nel flusso: un `ddta:Process` può comprendere direttamente altri Process mediante `hasSubProcess`; un `ddta:ProcessStep` può rappresentare il punto nel flusso che richiama un Process mediante `invokesProcess`. Nessuna delle due relazioni implica che il processo richiamato sia già stato eseguito. `ProcessStep` **non** è una sottoclasse di `Process`.
 
@@ -1216,7 +718,7 @@ La composizione strutturale è distinta dall'attivazione prevista nel flusso: un
 
 Per rendere ricostruibile la navigazione del flusso senza ricorrere a un ordinamento artificiale, `hasInitialStep` individua gli ingressi previsti del flusso di un processo. Può essercene più di uno, per processi con avvii indipendenti. L'assenza della proprietà in una documentazione parziale non deve essere interpretata come assenza di avvio.
 
-### 12.2 Relazioni
+### 9.2 Relazioni
 
 ```yaml ddta-ontology
 record: object-properties
@@ -1266,11 +768,62 @@ properties:
       it: >-
         Identifica il processo il cui richiamo previsto è rappresentato
         dal passo; la dichiarazione non è un evento eseguito.
+  - iri: process:declaresInputContract
+    status: approved
+    domain: ddta:ProcessStep
+    range: ddta:Contract
+    label: {en: declares input contract, it: dichiara contratto di ingresso}
+    definition:
+      en: >-
+        Declares a contract governing data consumed by this process step,
+        including internal data received from other steps.
+        Does not assert a transfer or redefine a function interface.
+      it: >-
+        Dichiara un contratto dei dati consumati dal passo, inclusi
+        risultati intermedi di altri passi. Non asserisce un trasferimento
+        e non ridefinisce l'interfaccia della funzione.
+  - iri: process:declaresOutputContract
+    status: approved
+    domain: ddta:ProcessStep
+    range: ddta:Contract
+    label: {en: declares output contract, it: dichiara contratto di uscita}
+    definition:
+      en: >-
+        Declares a contract governing data produced by this process step,
+        including internal data consumed by conditions or other steps.
+        Does not assert runtime production or redefine a function interface.
+      it: >-
+        Dichiara un contratto dei dati prodotti dal passo, inclusi
+        risultati intermedi usati da condizioni o da altri passi.
+        Non asserisce una produzione avvenuta né ridefinisce l'interfaccia della funzione.
 ```
 
-**Cardinalità documentali:** `hasSubProcess` 0..*, `hasInitialStep` 0..*, `invokesProcess` 0..1 per Step nella definizione di base. L'eventuale invocazione di più processi distinti richiede Step o controlli distinti, per non lasciare ambigua la semantica. Un `hasInitialStep` deve riferirsi a uno Step appartenente direttamente allo stesso processo mediante `ddta:hasStep`.
+**Cardinalità documentali:** `hasSubProcess` 0..*, `hasInitialStep` 0..*, `invokesProcess` 0..1 per Step nella definizione di base; `declaresInputContract` 0..* e `declaresOutputContract` 0..* per Step. L'eventuale invocazione di più processi distinti richiede Step o controlli distinti, per non lasciare ambigua la semantica. Un `hasInitialStep` deve riferirsi a uno Step appartenente direttamente allo stesso processo mediante `ddta:hasStep`.
 
-### 12.3 Interrogazioni SPARQL
+#### Contratti dichiarati dai singoli Step
+
+I contratti **esterni** del processo sono già quelli di `ddta:Function`, raggiungibili mediante `ddta:realizesFunction` e `ddta:hasInputContract` / `ddta:hasOutputContract`. **Non vengono ricreati** come contratti del processo o di ogni Step. Le proprietà `process:declaresInputContract` e `process:declaresOutputContract` si usano soltanto quando occorre esplicitare i dati consumati/prodotti da singoli passi. La stessa istanza `ddta:Contract` può essere referenziata dall'output di uno Step e dall'input di un altro senza duplicazione. Questa coincidenza non asserisce un trasferimento effettivo di dati: la topologia del flusso è descritta mediante `ddta:hasNextStep` e le sue specializzazioni, mentre l'eventuale provenienza dei valori richiede un'identificazione risolvibile.
+
+Per un confronto fra output di due Step, ogni Step può dichiarare il rispettivo contratto di output, il contratto può contenere `ddta:ContractElement` e l'operando `process:Operand` può riferirsi all'elemento mediante `process:referencesContractElement`. Una `process:AtomicCondition` non è un `ddta:ProcessStep` e **non** dichiara contratti di input tramite queste proprietà: usa `hasLeftOperand`, `hasRightOperand` e `comparisonOperator`. Il valore concreto dell'output durante un'esecuzione non coincide con la descrizione contrattuale.
+
+**Validazione documentale di base:** tutti gli oggetti di queste proprietà sono `ddta:Contract`; i loro elementi sono `ddta:ContractElement`. Quando occorre attribuire a uno Step la provenienza documentale di un operando, il percorso `Operand → ContractElement ← Contract ← declaresOutputContract ← ProcessStep` deve individuare **esattamente uno Step**; in caso contrario, la provenienza resta ambigua e non deve essere inferita per supposizione.
+
+### 9.3 Interrogazioni SPARQL
+
+**Ricostruire i contratti interni dichiarati dai ProcessStep:**
+
+```sparql
+PREFIX ddta: <https://w3id.org/ddta/core#>
+PREFIX process: <https://w3id.org/ddta/process#>
+SELECT ?step ?direction ?contract ?element WHERE {
+  ?step a ddta:ProcessStep .
+  { ?step process:declaresInputContract ?contract . BIND("input" AS ?direction) }
+  UNION
+  { ?step process:declaresOutputContract ?contract . BIND("output" AS ?direction) }
+  OPTIONAL { ?contract ddta:hasContractElement ?element }
+}
+ORDER BY ?step ?direction ?contract ?element
+```
 
 **Individuare le funzioni realizzate dai sottoprocessi, anche a profondità arbitraria:**
 
@@ -1299,7 +852,7 @@ SELECT ?step ?subprocess ?function ?contract ?element WHERE {
 }
 ```
 
-### 12.4 Vincoli di validazione
+### 9.4 Vincoli di validazione
 
 | ID | Controllo | Requisito |
 |---|---|---|
@@ -1345,146 +898,29 @@ constraints:
       - {path: process:invokesProcess, maxCount: 1}
 ```
 
-I controlli SPARQL devono essere tradotti e verificati come `sh:sparql`; l'esistenza del blocco YAML non implica che il generatore corrente li supporti già. L'informazione `hasInitialStep` è obbligatoria **per le viste di sequenza complete**, non per l'identificazione parziale di un processo.
+I controlli SPARQL devono essere tradotti e verificati come `sh:sparql`; l’esistenza del blocco YAML non implica che il generatore corrente li supporti già. L’informazione `hasInitialStep` è richiesta **per una descrizione completa degli ingressi previsti del flusso**, non per l’identificazione parziale di un processo.
 
-### 12.5 Esempio illustrativo (escluso dal TTL generato)
-
-```mermaid
-flowchart TB
-  P["PCProcess · Process"] -->|"hasSubProcess"| SP["PCSendPublicProcess · Process"]
-  P -->|"hasStep"| ST["PCSendPublicStep · ProcessStep"]
-  P -->|"hasInitialStep"| ST
-  ST -->|"invokesProcess"| SP
-  SP -->|"realizesFunction"| F["PCSendPublic · CommunicationFunction"]
-  F -->|"usesChannel"| C["PCToUserChannel · CommunicationChannel"]
-```
-
-```turtle
-@prefix ddta: <https://w3id.org/ddta/core#> .
-@prefix process: <https://w3id.org/ddta/process#> .
-@prefix ex: <https://example.org/ddta/dh#> .
-ex:PCProcess a ddta:Process ;
-    process:hasSubProcess ex:PCSendPublicProcess ;
-    ddta:hasStep ex:PCSendPublicStep ;
-    process:hasInitialStep ex:PCSendPublicStep .
-ex:PCSendPublicStep a ddta:ProcessStep ;
-    process:invokesProcess ex:PCSendPublicProcess .
-ex:PCSendPublicProcess a ddta:Process ;
-    ddta:realizesFunction ex:PCSendPublic .
-ex:PCSendPublic a ddta:CommunicationFunction ;
-    ddta:usesChannel ex:PCToUserChannel .
-```
-
----
-
-## 13. Esempi integrati di funzionamento
-
-### 13.1 Esempio A — Sequenzialità senza nodi speciali
-
-La struttura lineare del CORE è sufficiente per una sequenza semplice.
-
-```mermaid
-flowchart LR
-  A["LoadImage"] --> B["NormalizeImage"] --> C["RunModel"] --> D["ReturnResult"]
-```
-
-Una versione Process aggiunge transizioni esplicite soltanto quando servono dettagli, come guardie o identificatori di passaggio. Gli Step sono attività operative e **non** sottofunzioni per necessità.
-
-### 13.2 Esempio B — Immagine facoltativa in un processo di triage
-
-L'ingresso funzionale può prevedere un elemento immagine facoltativo. Il processo sceglie il ramo in funzione della condizione che verifica la presenza dell'immagine.
-
-```mermaid
-flowchart TB
-  A["ReceiveCase"] --> X{"XOR_SPLIT: imagePresent?"}
-  X -->|"true"| B["ImageUrgencyAnalysis"]
-  X -->|"false"| C["SkipImageAnalysis"]
-  B --> M["XOR_MERGE"]
-  C --> M
-  M --> D["ContinueTriage"]
-```
-
-`imagePresent` può fare riferimento, tramite un Operand, al corrispondente `ContractElement` dell'ingresso funzionale. Non si assume che un `ContractElement` contenga il valore concreto di una esecuzione. Le guardie delle transizioni descrivono il criterio di scelta, non la storia di un caso già elaborato.
-
-### 13.3 Esempio C — Accettazione del modello candidato
-
-```mermaid
-flowchart TB
-  E["EvaluateCandidateModel"] --> X{"XOR_SPLIT"}
-  X -->|"AcceptanceCondition true"| A["AdoptCandidate"]
-  X -->|"AcceptanceCondition false"| Z["END_PROCESS"]
-```
-
-Il criterio `CandidateAcceptanceCondition` può essere composto da `CandidateAccuracyAcceptable AND ValidationPassed`. Il valore configurabile `MinimumRequiredAccuracy` non costituisce da solo l'identità funzionale del criterio. **La produzione di una versione candidata non ne determina automaticamente l'adozione.** Questo esempio illustra il comportamento previsto, non una specifica esecuzione effettuata.
-
-### 13.4 Esempio D — Concorrenza e sincronizzazione N-of-M
-
-```mermaid
-flowchart TB
-  F["CONCURRENT_SPLIT"] --> A["AgentWorkerA"]
-  F --> B["AgentWorkerB"]
-  F --> C["AgentWorkerC"]
-  A --> J{"N_OF_M 2/3; SUCCESS"}
-  B --> J
-  C --> J
-  J --> D["AggregateResults"]
-  D --> E["END_PROCESS"]
-```
-
-Il join abilita la prosecuzione quando **due rami partecipanti** soddisfano il criterio previsto. Il modello **non** dichiara che il terzo worker sia stato cancellato, prosegua o abbia terminato: quelle sono caratteristiche ulteriori da modellare quando rilevanti. Un nodo `END_PROCESS` nel flusso previsto non è la registrazione dello stato `STOPPED` di un'esecuzione reale.
-
-### 13.5 Esempio E — Ricorsione e codice granulare
-
-```mermaid
-flowchart TB
-  P["TriageProcess"] -->|"hasStep"| I["InvokeDescriptionStep"]
-  I -->|"invokesProcess"| Q["DescriptionGenerationProcess"]
-  Q -->|"hasStep"| S["GenerateDescriptionStep"]
-  S -->|"hasCodeReference"| R["clinical_description.py::generate_description"]
-  S -->|"implementedBy"| W["DescriptionService / Resource"]
-  S -->|"usesConfiguration"| C["PromptConfig / Resource"]
-```
-
-Non si inferisce che il file nominato sia la build distribuita o che il servizio sia effettivamente in esecuzione. Il processo richiamato mantiene la propria identità e può avere transizioni e condizioni autonome.
-
-### 13.6 Esempio F — Condizione di attivazione, attesa e terminazione di ramo
-
-```mermaid
-flowchart TB
-  A["CheckReadiness"] --> X{"XOR_SPLIT"}
-  X -->|"ready"| B["ExecuteWork"]
-  X -->|"not ready"| W["WAIT"]
-  W -->|"condition satisfied"| B
-  B --> Z["END_BRANCH"]
-```
-
-Il nodo `WAIT` è una scelta prevista nella struttura del processo; non è uno stato osservato. `END_BRANCH` termina il ramo in questione, senza affermare la terminazione di altri rami concorrenti.
-
----
-
-## 14. Verifiche di integrazione CORE ↔ Process
+## 10. Verifiche di integrazione CORE ↔ Process
 
 | Verifica | Risultato atteso / controllo |
 |---|---|
 | Riutilizzo delle identità | Nessuna ridefinizione di classi/proprietà CORE |
-| Classificazione | `ControlNode ⊑ ProcessStep`; `SynchronizationNode ⊑ ControlNode` |
+| Classificazione | `ControlNode ⊑ ProcessStep` |
 | Process ≠ ProcessStep | Nessuna inferenza `ProcessStep ⊑ Process` |
-| Guardie | Le guardie qualificano transizioni, non `hasNextStep` generico |
-| Proprietà di base | Le transizioni possono materializzare `hasNextStep`, non viceversa in modo automatico |
-| `PRC-TRANS-01` | Le estremità appartengono a **ogni** processo che dichiara la transizione |
+| Uscite condizionate | I rami TRUE/FALSE qualificano il nodo di controllo e sono sottoproprietà di `hasNextStep` |
+| Proprietà di base | Le successioni sono dichiarate fra Step mediante `hasNextStep` oppure sue sottoproprietà |
 | Specifica funzionale | `ContractElement` resta una specifica, non un valore osservato |
 | Configurazione | I valori di soglia si riferiscono a una configurazione identificabile |
 | Concorrenza | Non implica parallelismo fisico |
 | Join N-of-M | Soglia, partecipanti e criterio di completamento documentati |
 | Codice | `CodeReference` distinta da `Resource`; nessuna inferenza da codice a componente eseguito |
 | Stato | Nessuno `hasState` reale su `ddta:Process` |
-| Esempi | Turtle e diagrammi esclusi dalla generazione del TTL |
 
-## 15. Requisiti di implementazione e compatibilità
+## 11. Requisiti di implementazione e compatibilità
 
-### 15.1 Vocabolario approvato e artefatti
+### 11.1 Vocabolario approvato e artefatti
 
-Le dichiarazioni marcate `approved` in questo documento costituiscono il **vocabolario dell'estensione Process**. La scrittura del Turtle OWL e degli Shape SHACL è un'operazione di generazione da eseguire in modo deterministico, con verifica dei relativi file. Il presente documento non comporta sovrascrittura né approvazione dei Turtle `core.ttl` e `process.ttl` già presenti sul filesystem.
+Le dichiarazioni marcate `approved` in questo documento costituiscono il **vocabolario dell’estensione PROCESS**. Il Turtle OWL è generato dai soli blocchi normativi `yaml ddta-ontology`; i controlli documentali `yaml ontology-validation` sono specifiche distinte per la validazione SHACL. Il presente documento non comporta sovrascrittura né approvazione dei Turtle già presenti sul filesystem. Le regole grafiche e la relativa generazione sono documentate nella guida PROCESS.
 
 - Le dichiarazioni sono selezionate esclusivamente da blocchi con info-string esatto `yaml ddta-ontology`.
 - `module: process` evita l'emissione accidentale di dichiarazioni nel CORE.
@@ -1492,71 +928,53 @@ Le dichiarazioni marcate `approved` in questo documento costituiscono il **vocab
 - Eventuali proprietà con unione di domini rappresentano una vera `owl:unionOf`: non devono essere trasformate in più `rdfs:domain` indipendenti.
 - La validazione SHACL non viene sostituita da inferenza OWL: dominio e range non sono controlli di integrità.
 
-### 15.2 Controlli documentali
+### 11.2 Controlli documentali
 
-Il generatore e il validatore devono includere i controlli documentali dichiarati nelle singole schede. I controlli minimi con identificatore esplicito sono:
+I controlli documentali dichiarati nelle singole schede comprendono:
 
 | Identificatore | Oggetto della verifica |
 |---|---|
-| `PRC-TRANS-01` | Entrambe le estremità di ogni transizione appartengono al processo che la dichiara |
-| `PRC-TRANS-02` | Ogni transizione ha esattamente sorgente e destinazione |
-| `PRC-TRANS-03` | Una sola guardia per transizione |
-| `PRC-TRANS-04` | Una transizione ha un unico processo proprietario nel grafo validato |
 | `PRC-COMP-01` | Composizione `hasSubProcess` aciclica |
 | `PRC-COMP-02` | Gli Step iniziali sono Step diretti del processo |
 | `PRC-COMP-03` | Al massimo un sottoprocesso richiamato per Step |
-| `PRC-SYNC-01..05` | Coerenza delle sincronizzazioni ALL/ANY/N-of-M |
-| `PRC-COND-01..02` | Cardinalità delle condizioni di attivazione |
+| `PRC-SYNC-01..06` | Coerenza di partecipanti, regola, soglia, criterio e appartenenza nel controllo composto |
 | `PRC-ATOM-01..02` | Forma delle condizioni atomiche e operatori ammessi |
-| `PRC-COMP-COND-01..03` | Struttura e aciclicità delle condizioni composte |
 | `PRC-CTRL-01` | Tipi riconosciuti dei nodi di controllo |
 
-Per gli altri vincoli di cardinalità e operatori descritti nelle schede, valgono i requisiti testuali e le eventuali dichiarazioni strutturate presenti. Gli Shape devono essere testati con casi validi e negativi; **i test Python del caso Diffie-Hellman non sono equivalenti a una validazione SHACL completa**.
+Per gli altri vincoli di cardinalità e operatori descritti nelle schede, valgono i requisiti testuali e le eventuali dichiarazioni strutturate presenti. Le proprietà dei rami richiedono i controlli SHACL `PRC-CTRL-02..04` dichiarati nella scheda `ControlNode`. Gli Shape devono essere testati con casi validi e negativi; gli eventuali test Python sui casi applicativi non sostituiscono una validazione SHACL completa.
 
-### 15.3 Cosa non rappresenta questa ontologia
+### 11.3 Limiti semantici
 
-La DDTA Process Ontology descrive **il funzionamento previsto**, non lo stato osservato di un'esecuzione. Non introduce `ProcessExecution`, `RUNNING`, `WAITING`, `STOPPED`, né una semantica generale di gestione dei worker residui; non prova il rispetto dei contratti, l'autenticità dei dati comunicati o la sicurezza di un protocollo. Le lacune documentali rappresentate dal **`?` cerchiato rosso** sono annotazioni dell'authoring e del renderer, non individui fittizi `ProcessStep` né rami con comportamento inventato. Il tracciamento e la formalizzazione delle lacune sono competenza della documentazione DDTA, distinta dal vocabolario dei processi.
+La DDTA Process Ontology descrive **il funzionamento previsto**, non lo stato osservato di un'esecuzione. Non introduce `ProcessExecution`, `RUNNING`, `WAITING`, `STOPPED`, né una semantica generale di gestione dei worker residui; non prova il rispetto dei contratti, l'autenticità dei dati comunicati o la sicurezza di un protocollo. Le lacune documentali sono responsabilità dell’authoring DDTA, distinto dal vocabolario dei processi: un’informazione non dichiarata non giustifica la creazione di individui `ProcessStep` o di collegamenti operativi per supposizione.
 
 Una futura DDTA Code Ontology può approfondire sorgenti, build, servizi e deployment; una Execution Ontology può descrivere le istanze reali e gli stati di avanzamento; una Security Ontology può rappresentare minacce, ipotesi di attacco e contromisure. Le nuove ontologie possono riutilizzare le identità definite qui senza reimpostarle.
 
 ---
 
-## 16. Verifica di espressività: protocollo Diffie-Hellman
+## 12. Generazione del vocabolario OWL/Turtle
 
-La prova Diffie-Hellman conservata sotto `ontology/case-studies/diffie-hellman/` è **un caso di studio e non una seconda fonte normativa**. È utilizzata per verificare la possibilità di modellare separatamente due sistemi/ambienti, le relative funzioni e i contratti, i processi autonomi, i canali direzionali e i Boundary. Il modello di istanza R5A mantiene alcuni metadati ausiliari `viz:` che non entrano nel vocabolario Process di questa scheda.
+Le dichiarazioni normative `yaml ddta-ontology` di questo documento costituiscono la sorgente del vocabolario OWL/Turtle dell’estensione PROCESS. Il tool `ontology_from_md.py` valida tali dichiarazioni e genera il file `process.ttl`. Le sezioni SPARQL e i controlli `yaml ontology-validation` non producono dichiarazioni OWL; i casi applicativi sono mantenuti separati dall'ontologia.
 
-### 16.1 Dalla struttura al contenuto comunicato
+I comandi seguenti si eseguono **dalla directory che contiene `ontology_from_md.py`**, utilizzando la CLI con l’opzione `--source` descritta nella sezione equivalente dell’ontologia CORE. Il percorso del Markdown sorgente e la directory di output sono espliciti: non è richiesta una struttura fissa del repository.
 
-La navigazione seguente utilizza soltanto relazioni del CORE e della Process Ontology:
+PROCESS riutilizza classi e proprietà dichiarate nel CORE. Il generatore verifica che tutti i riferimenti siano risolti **nell'insieme dei Markdown selezionati**; per questo i comandi devono includere **entrambi** `DDTA_CORE.md` e `DDTA_PROCESS.md` mediante due opzioni `--source`. I file possono trovarsi in directory differenti e i percorsi non sono fissati dal tool.
 
-```mermaid
-flowchart TB
-  S["PCSendPublicStep"] -->|"invokesProcess"| P["PCSendPublicProcess"]
-  P -->|"realizesFunction"| F["PCSendPublic · CommunicationFunction"]
-  F -->|"hasOutputContract"| C["PublicAOverChannel · Contract"]
-  C -->|"hasContractElement"| E["PublicA · ContractElement"]
-  F -->|"usesChannel"| CH["PCToUserChannel"]
+**Validazione senza scrittura:**
+
+```powershell
+python .\ontology_from_md.py --source "<percorso-DDTA_CORE.md>" --source "<percorso-DDTA_PROCESS.md>" --validate-only
 ```
 
-L'identità del contratto `PublicAOverChannel` è **riutilizzata intenzionalmente** come output della funzione emittente e input della funzione ricevente. La correlazione univoca, in questo caso ristretto, permette di individuare l'informazione `A` e il canale. L'uso della stessa identità non costituisce una regola generale di correlazione di comunicazioni ripetute e non prova che l'informazione ricevuta coincida con quella inviata.
+**Generazione dei Turtle:**
 
-### 16.2 Condizione sull'esito della validazione
-
-Il controllo nominale sulla prosecuzione riguarda l'esito `ValidityA` / `ValidityB` della rispettiva sottofunzione di validazione, **non la mera presenza** del valore remoto ricevuto. Una rappresentazione strutturata possibile è:
-
-```turtle
-@prefix ddta: <https://w3id.org/ddta/core#> .
-@prefix process: <https://w3id.org/ddta/process#> .
-@prefix ex: <https://example.org/ddta/dh#> .
-ex:PeerPublicValid a process:AtomicCondition ;
-    process:hasLeftOperand ex:ValidationResultOperand ;
-    process:comparisonOperator "EQ" ;
-    process:hasRightOperand ex:TrueOperand .
-ex:ValidationResultOperand a process:Operand ;
-    process:referencesContractElement ex:ValidityB .
-ex:TrueOperand a process:Operand ; process:literalValue true .
-ex:ValidityB a ddta:ContractElement .
+```powershell
+python .\ontology_from_md.py --source "<percorso-DDTA_CORE.md>" --source "<percorso-DDTA_PROCESS.md>" --generate --output-dir "<directory-di-output>"
 ```
 
-L'esempio mostra la **struttura della condizione**; non afferma che un valore ricevuto sia matematicamente valido o autentico.
+**Confronto dei Turtle esistenti, senza sovrascriverli:**
 
+```powershell
+python .\ontology_from_md.py --source "<percorso-DDTA_CORE.md>" --source "<percorso-DDTA_PROCESS.md>" --check --output-dir "<directory-di-output>"
+```
+
+La generazione scrive **`core.ttl` e `process.ttl`** nella directory di output indicata; il secondo file contiene il vocabolario PROCESS e i riferimenti alle entità CORE, senza ridefinirle. Il controllo `--check` richiede **entrambi** i Turtle già generati. La riproducibilità byte per byte e il parsing RDF devono essere verificati prima della promozione in `tesiStabile`.

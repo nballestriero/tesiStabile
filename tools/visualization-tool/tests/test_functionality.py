@@ -45,7 +45,7 @@ class CompleteGuideTests(unittest.TestCase):
         return ir,render(ir,self.catalog)
 
     def test_01_guide_has_all_29_normative_rules(self):
-        self.assertEqual(len(self.catalog.records),29)
+        self.assertEqual(len(self.catalog.records),31)
         self.assertEqual({r['record'] for r in self.catalog.records},
                          {'class-style','relation-style','grouped-relations-style','global-label-style','projection-rule'})
 
@@ -72,6 +72,8 @@ class CompleteGuideTests(unittest.TestCase):
          'hasSource':('CommunicationChannel','Resource','plain',None),
          'hasDestination':('CommunicationChannel','Resource','plain',None),
          'usesChannel':('CommunicationFunction','CommunicationChannel','plain',None),
+         'usesChannelForInput':('Function','CommunicationChannel','plain',None),
+         'usesChannelForOutput':('Function','CommunicationChannel','plain',None),
          'hasBoundary':('System','Boundary','plain','child'),
          'encloses':('Boundary','Resource','plain','parent'),
          'hasContractElement':('Contract','ContractElement','plain','parent'),
@@ -95,7 +97,7 @@ class CompleteGuideTests(unittest.TestCase):
 
     def test_03_all_11_relation_styles_are_exercised(self):
         rules=[r for r in self.catalog.records if r['record']=='relation-style']
-        self.assertEqual(len(rules),11)
+        self.assertEqual(len(rules),13)
         for r in rules:
             rel=r['target'].split(':')[-1]
             with self.subTest(relation=rel):
@@ -137,7 +139,8 @@ class CompleteGuideTests(unittest.TestCase):
         for s,cls in [(EX.Sender,'CommunicationFunction'),(EX.Receiver,'CommunicationFunction'),
                       (EX.Channel,'CommunicationChannel'),(EX.Payload,'Contract')]:
             g.add((s,RDF.type,DDTA[cls]))
-        for f in (EX.Sender,EX.Receiver):g.add((f,DDTA.usesChannel,EX.Channel))
+        g.add((EX.Sender,DDTA.usesChannelForOutput,EX.Channel))
+        g.add((EX.Receiver,DDTA.usesChannelForInput,EX.Channel))
         g.add((EX.Sender,DDTA.hasOutputContract,EX.Payload))
         g.add((EX.Receiver,DDTA.hasInputContract,EX.Payload))
         ir,mmd=self.show(g,view='functional-flow')
@@ -274,7 +277,7 @@ class CompleteGuideTests(unittest.TestCase):
             proc=subprocess.run(command,capture_output=True,text=True,cwd=ROOT)
             self.assertEqual(proc.returncode,0,proc.stderr)
             report=json.loads((out/'06_diagnostics.json').read_text())
-            self.assertEqual(report['regole'],31)
+            self.assertEqual(report['regole'],33)
             self.assertEqual(report['triple'],96)
             mmd=(out/'05_graph.mmd').read_text()
             self.assertIn('ProcessorA',mmd)

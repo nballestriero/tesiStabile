@@ -3,7 +3,11 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from ddta_viz.pipeline import main
-
+# Unico punto d'ingresso DDTA: CORE invariato per default; PROCESS opzionale.
+# PROCESS R5: modular extension under tools/visualization-tool/src.
 if __name__ == "__main__":
-    raise SystemExit(main())
+    if "--process-guide" in sys.argv[1:]:
+        from ddta_process_pipeline import main as process_main
+        raise SystemExit(process_main(sys.argv[1:]))
+    from ddta_viz.pipeline import main as core_main
+    raise SystemExit(core_main(sys.argv[1:]))
